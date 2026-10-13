@@ -832,6 +832,7 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
 }
 /* mobile v2 */
 .dtab b{hyphens:none}
+.mdir,.mdir-o{display:none}
 @media (max-width:640px){
 
  /* directions: compact 2 x 2 grid (homepage, inner pages, About) */
@@ -949,6 +950,28 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
  .foot li a{font-size:14px;padding:4px 0}
  .foot .fa,.foot .fb{font-size:13px;margin-top:8px}
  .fbot{font-size:12.5px;padding-top:14px}
+ /* slim "current direction" bar under the header (mdir.js) */
+ html{scroll-padding-top:calc(var(--hdr) + 64px)}
+ .mdir{display:block;position:fixed;left:0;right:0;top:var(--hdr);z-index:28;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 10px 24px rgba(15,31,53,.13);transform:translateY(-130%);visibility:hidden;transition:transform .28s ease,visibility 0s linear .28s}
+ .mdir.on{transform:none;visibility:visible;transition:transform .28s ease}
+ .mdir-b{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:7px var(--pad);border:0;background:transparent;text-align:left;font-family:var(--sans);color:var(--ink);cursor:pointer}
+ .mdir-i{width:34px;height:34px;border-radius:8px;object-fit:cover;flex:none;background:var(--bg2)}
+ .mdir-t{flex:1;min-width:0}
+ .mdir-t small{display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--steel);line-height:1.2}
+ .mdir-t b{display:block;font-size:15px;font-weight:800;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .mdir-c{flex:none;width:34px;height:34px;border-radius:50%;background:var(--skyl);color:var(--blue);display:flex;align-items:center;justify-content:center;font-style:normal;transition:transform .25s ease}
+ .mdir.open .mdir-c{transform:rotate(180deg)}
+ .mdir-p{max-height:0;overflow:hidden;transition:max-height .3s ease}
+ .mdir.open .mdir-p{max-height:340px}
+ .mdir-a{display:flex;align-items:center;gap:12px;padding:9px var(--pad);border-top:1px solid var(--line);text-decoration:none;color:var(--ink)}
+ .mdir-a img{width:42px;height:42px;border-radius:9px;object-fit:cover;flex:none}
+ .mdir-a span{min-width:0}
+ .mdir-a b{display:block;font-size:15px;font-weight:800;line-height:1.25}
+ .mdir-a small{display:block;font-size:12.5px;font-weight:600;color:var(--steel);line-height:1.3;margin-top:1px}
+ .mdir-a.on{background:var(--skyl)}.mdir-a.on b{color:var(--blue)}
+ .mdir-a:active{background:var(--skyl)}
+ .mdir-o{display:block;position:fixed;inset:0;z-index:27;background:rgba(9,24,48,.38);opacity:0;pointer-events:none;transition:opacity .25s ease}
+ .mdir-o.on{opacity:1;pointer-events:auto}
  /* mail picker */
  .mp-copy{flex-wrap:wrap;padding:12px 14px}
  .mp-copy b{font-size:16px}
