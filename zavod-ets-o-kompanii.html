@@ -528,6 +528,22 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
 @keyframes lgFade{to{opacity:1}}
 @media (max-width:1300px){.about-g{grid-template-columns:1fr!important}.lgv{margin:0 auto}}
 @media (max-width:700px){.lgv{width:auto;height:auto;display:flex;flex-direction:column;align-items:center;gap:12px}.lgs{position:static;width:240px!important;height:240px!important}.lgc{position:static;display:flex;flex-direction:column;gap:12px;width:100%}.lc{position:static;width:auto}}
+/* phone: logo on the left, its five branches continue as traces to the five cards */
+@media (max-width:640px){
+ .lgv{--lw:clamp(84px,25vw,108px);--cg:26px;display:grid;grid-template-columns:var(--lw) minmax(0,1fr);column-gap:var(--cg);align-items:center;width:auto;height:auto;margin:6px 0 0;position:relative}
+ .lgs{position:relative;z-index:1;top:auto!important;width:var(--lw)!important;height:var(--lw)!important}
+ .lgc{position:relative;z-index:1;display:flex;flex-direction:column;gap:6px;width:auto}
+ .lc{position:relative;left:auto!important;top:auto!important;width:auto;padding:8px 12px 9px;border-radius:12px}
+ .lc b{font-size:13.5px;line-height:1.25}.lc span{font-size:12px;line-height:1.35;margin-top:2px}
+ .lgm{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;z-index:0}
+ .lgm .t{fill:none;stroke:#1B98E0;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.7;stroke-dasharray:1;stroke-dashoffset:1}
+ .lgm .pad{fill:#1B98E0;opacity:0}
+ .lgm .p{fill:#EAF7FF;opacity:0;filter:drop-shadow(0 0 1.5px #6FD0FF) drop-shadow(0 0 3px #1B98E0)}
+ .lgv.in .lgm .t{animation:lgDraw .45s ease-out var(--t) forwards}
+ .lgv.in .lgm .pad{animation:lgFade .2s ease var(--t2) forwards}
+ .lgv.done .lgm .t{stroke-dashoffset:0;animation:none}.lgv.done .lgm .pad{opacity:1;animation:none}
+}
+@keyframes lgDraw{to{stroke-dashoffset:0}}
 
 /* /about visual */
 /* request card (replaces the form) */
@@ -815,19 +831,20 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
  .js .rv.in{opacity:1;transform:none}
 }
 /* mobile v2 */
+.dtab b{hyphens:none}
 @media (max-width:640px){
 
- /* directions: one scrollable line of chips (also the sticky bar) */
- .dbar-ph{margin-top:0;position:sticky;top:calc(var(--hdr) + env(safe-area-inset-top,0px));z-index:20;background:var(--bg);margin-inline:calc(-1 * var(--pad));padding:8px var(--pad) 0;box-shadow:0 10px 14px -12px rgba(15,31,53,.25)}
- .dirs{padding-top:6px}
+ /* directions: compact 2 x 2 grid (homepage, inner pages, About) */
+ .dbar-ph{margin-top:0}
+ .dirs{padding-top:14px}
  .dbar,.dnav .dbar{background:transparent;border:0;border-radius:0;box-shadow:none;overflow:visible}
- .dtabs{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scroll-padding-inline:var(--pad);margin-inline:calc(-1 * var(--pad));padding:2px var(--pad) 8px;scrollbar-width:none}
- .dtabs::-webkit-scrollbar{display:none}
- .dtabs .dtab,.dbar.compact .dtab,.dl-slim .dtab{flex:0 0 auto;display:flex;align-items:center;gap:8px;width:auto;padding:6px 14px 6px 6px;border:1px solid var(--line2);border-radius:12px;background:var(--surface);scroll-snap-align:start;box-shadow:0 4px 12px rgba(15,31,53,.07)}
+ .dtabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .dtabs .dtab,.dbar.compact .dtab,.dl-slim .dtab{display:flex;align-items:center;gap:8px;width:auto;min-width:0;min-height:48px;padding:7px 12px;border:1px solid var(--line2);border-radius:12px;background:var(--surface);box-shadow:0 4px 12px rgba(15,31,53,.07)}
  .dtabs .dtab:last-child,.dtabs .dtab:nth-child(2n){border-right:1px solid var(--line2)}
  .dtabs .dtab:nth-child(-n+2){border-bottom:1px solid var(--line2)}
- .dtabs .dtab figure,.dbar.compact .dtab figure{order:-1;width:34px;height:34px;border-radius:8px;flex:none}
- .dtabs .dtab b,.dbar.compact .dtab b{font-size:14px;white-space:nowrap;line-height:1.2}
+ .dtabs .dtab>span{min-width:0}
+ .dtabs .dtab figure,.dbar.compact .dtab figure{display:none}
+ .dtabs .dtab b,.dbar.compact .dtab b{font-size:14px;line-height:1.22;white-space:normal;hyphens:manual}
  .dtabs .dtab span{margin-top:0}
  .dtabs .dtab span span{display:none}
  .dtabs .dtab .chev{display:none}
@@ -835,6 +852,8 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
  .dtabs .dtab[aria-selected="true"],.dtabs .dtab[aria-current="page"]{background:var(--navy);border-color:var(--navy)}
  .dtabs .dtab[aria-selected="true"] b,.dtabs .dtab[aria-current="page"] b{color:#fff}
  :root{--pad:18px;--hdr:64px}
+ html{overflow-x:hidden}
+ body{overflow-x:clip}
  .sec{padding-block:40px}
  h2{font-size:26px;line-height:1.15}
  .hd{margin-bottom:16px}
@@ -856,7 +875,7 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
  .slab b{font-size:21px}
  .slab span{font-size:12.5px;line-height:1.3;margin-top:4px}
  /* direction panes */
- .pane{scroll-margin-top:calc(var(--hdr) + 74px)}
+ .pane{scroll-margin-top:calc(var(--hdr) + 134px)}
  .spane{scroll-margin-top:calc(var(--hdr) + 70px)}
  .dirs .dmain{padding-top:20px}
  .pane h2,.dirs .pane h2{font-size:24px;margin-bottom:10px}
@@ -884,10 +903,6 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
  /* about */
  .about h2{margin-bottom:12px}
  .about-g{gap:24px!important}
- .lgv{gap:10px}
- .lgs{width:190px!important;height:190px!important}
- .lgc{gap:8px}
- .lc{padding:10px 14px}.lc b{font-size:15px}.lc span{font-size:13px;margin-top:2px}
  .certs{margin-top:28px;padding-top:24px;gap:14px}
  .certs h3{font-size:20px;margin-bottom:8px}
  .badges li{grid-template-columns:62px minmax(0,1fr);gap:12px;padding:10px 0}
@@ -930,7 +945,8 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
  .foot{padding-block:30px 20px}
  .fg{grid-template-columns:1fr;gap:18px;padding-bottom:20px}
  .foot h3{font-size:14px;margin-bottom:6px}
- .foot li a{font-size:14px;padding:5px 0}
+ .foot ul{gap:0}
+ .foot li a{font-size:14px;padding:4px 0}
  .foot .fa,.foot .fb{font-size:13px;margin-top:8px}
  .fbot{font-size:12.5px;padding-top:14px}
  /* mail picker */
@@ -1222,19 +1238,20 @@ a.dtab:hover{color:var(--ink)}a.dtab[aria-current="page"]:hover{color:#fff;backg
 @media (max-width:700px){.dnav{position:static}.dp-prods,.dp-facts,.dp-photos{grid-template-columns:1fr}}
 @media (max-width:700px){.dp-facts2{grid-template-columns:repeat(2,minmax(0,1fr))}.dp-facts2 .dp-fact{padding:14px 14px 12px}.dp-facts2 .dp-fact b{font-size:20px}.dp-facts2 .dp-fact span{font-size:14px}}
 /* mobile v2 */
+.dtab b{hyphens:none}
 @media (max-width:640px){
 
- /* directions: one scrollable line of chips (also the sticky bar) */
- .dbar-ph{margin-top:0;position:sticky;top:calc(var(--hdr) + env(safe-area-inset-top,0px));z-index:20;background:var(--bg);margin-inline:calc(-1 * var(--pad));padding:8px var(--pad) 0;box-shadow:0 10px 14px -12px rgba(15,31,53,.25)}
- .dirs{padding-top:6px}
+ /* directions: compact 2 x 2 grid (homepage, inner pages, About) */
+ .dbar-ph{margin-top:0}
+ .dirs{padding-top:14px}
  .dbar,.dnav .dbar{background:transparent;border:0;border-radius:0;box-shadow:none;overflow:visible}
- .dtabs{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scroll-padding-inline:var(--pad);margin-inline:calc(-1 * var(--pad));padding:2px var(--pad) 8px;scrollbar-width:none}
- .dtabs::-webkit-scrollbar{display:none}
- .dtabs .dtab,.dbar.compact .dtab,.dl-slim .dtab{flex:0 0 auto;display:flex;align-items:center;gap:8px;width:auto;padding:6px 14px 6px 6px;border:1px solid var(--line2);border-radius:12px;background:var(--surface);scroll-snap-align:start;box-shadow:0 4px 12px rgba(15,31,53,.07)}
+ .dtabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .dtabs .dtab,.dbar.compact .dtab,.dl-slim .dtab{display:flex;align-items:center;gap:8px;width:auto;min-width:0;min-height:48px;padding:7px 12px;border:1px solid var(--line2);border-radius:12px;background:var(--surface);box-shadow:0 4px 12px rgba(15,31,53,.07)}
  .dtabs .dtab:last-child,.dtabs .dtab:nth-child(2n){border-right:1px solid var(--line2)}
  .dtabs .dtab:nth-child(-n+2){border-bottom:1px solid var(--line2)}
- .dtabs .dtab figure,.dbar.compact .dtab figure{order:-1;width:34px;height:34px;border-radius:8px;flex:none}
- .dtabs .dtab b,.dbar.compact .dtab b{font-size:14px;white-space:nowrap;line-height:1.2}
+ .dtabs .dtab>span{min-width:0}
+ .dtabs .dtab figure,.dbar.compact .dtab figure{display:none}
+ .dtabs .dtab b,.dbar.compact .dtab b{font-size:14px;line-height:1.22;white-space:normal;hyphens:manual}
  .dtabs .dtab span{margin-top:0}
  .dtabs .dtab span span{display:none}
  .dtabs .dtab .chev{display:none}
@@ -1253,7 +1270,7 @@ a.dtab:hover{color:var(--ink)}a.dtab[aria-current="page"]:hover{color:#fff;backg
  .dp-lead,.ip-lead{margin-top:10px;font-size:15px;line-height:1.55}
  .dp-hg,.ip-hg{gap:18px}
  .dp-cta-b{gap:10px;margin-top:16px}
- .dp-cta-b .btn,.dp-cta-b .btn-o2{flex:1 1 140px;min-height:48px;padding:0 16px;font-size:15px}
+ .dp-cta-b .btn,.dp-cta-b .btn-o2{flex:1 1 auto;min-height:48px;padding:0 12px;font-size:15px;white-space:nowrap}
  .btn-o2{min-height:48px;font-size:15px}
  .dp-hero-f{min-height:0;max-height:none}
  /* "on this page": one scrollable line */
@@ -1335,9 +1352,9 @@ a.dtab:hover{color:var(--ink)}a.dtab[aria-current="page"]:hover{color:#fff;backg
  .m3-tabs button{padding:9px 16px;font-size:14px}
  .m3{height:420px}
  /* objects page */
- .dp-sec .ob-g{grid-template-columns:1fr 1fr;gap:16px 10px}
+ .dp-sec .ob-g{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 10px}
  .ob-i button{border-radius:12px}
- .ob-i figcaption{font-size:12.5px;margin-top:6px;line-height:1.35}
+ .ob-i figcaption{font-size:12.5px;margin-top:6px;line-height:1.35;overflow-wrap:break-word}
  .ob-f{contain:inline-size;min-width:0;flex-wrap:nowrap;overflow-x:auto;margin-inline:calc(-1 * var(--pad));padding:0 var(--pad) 6px;scrollbar-width:none}
  .ob-f::-webkit-scrollbar{display:none}
  .ob-f button{flex:0 0 auto;white-space:nowrap}
@@ -1378,7 +1395,7 @@ a.dtab:hover{color:var(--ink)}a.dtab[aria-current="page"]:hover{color:#fff;backg
 <p class="dp-p">Собственные производственные мощности и оборудование позволяют изготавливать оборудование в соответствии с проектными задачами, в том числе для взрывоопасных и агрессивных сред.</p>
 <p class="dp-p">Опытная монтажная группа выполняет строительно-монтажные и пусконаладочные работы по всей территории России и ближнего зарубежья.</p></div>
 <div><h3 style="font-size:20px;margin-bottom:12px">Комплекс выполняемых работ</h3><ul class="dp-check"><li>Разработка проектных решений, теплотехнические расчёты, принципиальные схемы низковольтных устройств</li><li>Подбор оборудования и материалов по проекту, изготовление по опросным листам Заказчика</li><li>Визуализация проектов</li><li>Шеф-монтажные, строительно-монтажные и пусконаладочные работы</li><li>Гарантийное обслуживание</li></ul></div></div><div class="wrap" style="margin-top:36px"><div class="pg-grid c4"><a class="pg-f" href="zavod-ets-obekty.html#ph-eo-otvod-1"><figure><img src="foto/m/eo-otvod-1.jpg" alt="Электрообогрев отвода трубопровода большого диаметра" loading="lazy"></figure><span>Электрообогрев отвода трубопровода большого диаметра</span></a><a class="pg-f" href="zavod-ets-obekty.html#ph-eo-emkost"><figure><img src="foto/m/eo-emkost.jpg" alt="Обогрев вертикальной ёмкости: кабель уложен спиралью по корпусу" loading="lazy"></figure><span>Обогрев вертикальной ёмкости: кабель уложен спиралью по корпусу</span></a><a class="pg-f" href="zavod-ets-obekty.html#ph-ti-kozhuh"><figure><img src="foto/m/ti-kozhuh.jpg" alt="Теплоизоляция крупногабаритных воздуховодов с металлическим покрытием" loading="lazy"></figure><span>Теплоизоляция крупногабаритных воздуховодов с металлическим покрытием</span></a><a class="pg-f" href="zavod-ets-obekty.html#ph-ti-kolonna"><figure><img src="foto/m/ti-kolonna.jpg" alt="Теплоизоляция вертикального трубопровода минераловатными изделиями" loading="lazy"></figure><span>Теплоизоляция вертикального трубопровода минераловатными изделиями</span></a></div><p class="dp-more-row"><a href="zavod-ets-obekty.html">Все фото с объектов и производства <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></section>
-<section id="s2" class="dp-sec dl-slim"><div class="wrap"><h2 class="dp-h2">Направления</h2><nav class="dbar card dlist-static" aria-label="Направления"><div class="dtabs"><a class="dtab" href="zavod-ets-proektirovanie.html"><span><b>Проектирование</b><span>Расчёты, схемы, документация</span></span><figure><img src="foto/m/shema-obogreva.jpg" alt=""></figure><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a><a class="dtab" href="zavod-ets-proizvodstvo.html"><span><b>Производство</b><span>Оборудование собственного завода</span></span><figure><img src="foto/m/g-proizv.jpg" alt=""></figure><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a><a class="dtab" href="zavod-ets-montazh-elektroobogreva.html"><span><b>Монтаж систем электрообогрева</b><span>Собственная монтажная группа</span></span><figure><img src="foto/m/g-montazh.jpg" alt=""></figure><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a><a class="dtab" href="zavod-ets-montazh-teploizolyacii.html"><span><b>Монтаж теплоизоляции</b><span>Трубопроводы и оборудование</span></span><figure><img src="foto/m/g-izolyaciya.jpg" alt=""></figure><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></div></nav>
+<section id="s2" class="dp-sec dl-slim"><div class="wrap"><h2 class="dp-h2">Направления</h2><nav class="dbar card dlist-static" aria-label="Направления"><div class="dtabs"><a class="dtab" href="zavod-ets-proektirovanie.html"><span><b>Проектирование</b><span>Расчёты, схемы, документация</span></span><figure><img src="foto/m/shema-obogreva.jpg" alt=""></figure><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a><a class="dtab" href="zavod-ets-proizvodstvo.html"><span><b>Производство</b><span>Оборудование собственного завода</span></span><figure><img src="foto/m/g-proizv.jpg" alt=""></figure><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a><a class="dtab" href="zavod-ets-montazh-elektroobogreva.html"><span><b>Монтаж систем электро&shy;обогрева</b><span>Собственная монтажная группа</span></span><figure><img src="foto/m/g-montazh.jpg" alt=""></figure><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a><a class="dtab" href="zavod-ets-montazh-teploizolyacii.html"><span><b>Монтаж тепло&shy;изоляции</b><span>Трубопроводы и оборудование</span></span><figure><img src="foto/m/g-izolyaciya.jpg" alt=""></figure><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></div></nav>
 <p class="dp-more-row">Виды работ на объекте: СМР, пусконаладка, шеф-монтаж, сервис <a href="zavod-ets-uslugi.html">Услуги <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></section>
 <section id="s3" class="dp-sec why2-sec"><div class="wrap"><h2 class="dp-h2">Почему выбирают нас</h2><div class="why2">
 <div><small>Большой опыт работы</small><b>6+ лет и 650+ проектов</b><span>Свой проектно-конструкторский отдел, производство и монтажная группа: решаем задачи любого уровня сложности.</span></div>

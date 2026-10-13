@@ -528,6 +528,22 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
 @keyframes lgFade{to{opacity:1}}
 @media (max-width:1300px){.about-g{grid-template-columns:1fr!important}.lgv{margin:0 auto}}
 @media (max-width:700px){.lgv{width:auto;height:auto;display:flex;flex-direction:column;align-items:center;gap:12px}.lgs{position:static;width:240px!important;height:240px!important}.lgc{position:static;display:flex;flex-direction:column;gap:12px;width:100%}.lc{position:static;width:auto}}
+/* phone: logo on the left, its five branches continue as traces to the five cards */
+@media (max-width:640px){
+ .lgv{--lw:clamp(84px,25vw,108px);--cg:26px;display:grid;grid-template-columns:var(--lw) minmax(0,1fr);column-gap:var(--cg);align-items:center;width:auto;height:auto;margin:6px 0 0;position:relative}
+ .lgs{position:relative;z-index:1;top:auto!important;width:var(--lw)!important;height:var(--lw)!important}
+ .lgc{position:relative;z-index:1;display:flex;flex-direction:column;gap:6px;width:auto}
+ .lc{position:relative;left:auto!important;top:auto!important;width:auto;padding:8px 12px 9px;border-radius:12px}
+ .lc b{font-size:13.5px;line-height:1.25}.lc span{font-size:12px;line-height:1.35;margin-top:2px}
+ .lgm{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;z-index:0}
+ .lgm .t{fill:none;stroke:#1B98E0;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.7;stroke-dasharray:1;stroke-dashoffset:1}
+ .lgm .pad{fill:#1B98E0;opacity:0}
+ .lgm .p{fill:#EAF7FF;opacity:0;filter:drop-shadow(0 0 1.5px #6FD0FF) drop-shadow(0 0 3px #1B98E0)}
+ .lgv.in .lgm .t{animation:lgDraw .45s ease-out var(--t) forwards}
+ .lgv.in .lgm .pad{animation:lgFade .2s ease var(--t2) forwards}
+ .lgv.done .lgm .t{stroke-dashoffset:0;animation:none}.lgv.done .lgm .pad{opacity:1;animation:none}
+}
+@keyframes lgDraw{to{stroke-dashoffset:0}}
 
 /* /about visual */
 /* request card (replaces the form) */
@@ -815,19 +831,20 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
  .js .rv.in{opacity:1;transform:none}
 }
 /* mobile v2 */
+.dtab b{hyphens:none}
 @media (max-width:640px){
 
- /* directions: one scrollable line of chips (also the sticky bar) */
- .dbar-ph{margin-top:0;position:sticky;top:calc(var(--hdr) + env(safe-area-inset-top,0px));z-index:20;background:var(--bg);margin-inline:calc(-1 * var(--pad));padding:8px var(--pad) 0;box-shadow:0 10px 14px -12px rgba(15,31,53,.25)}
- .dirs{padding-top:6px}
+ /* directions: compact 2 x 2 grid (homepage, inner pages, About) */
+ .dbar-ph{margin-top:0}
+ .dirs{padding-top:14px}
  .dbar,.dnav .dbar{background:transparent;border:0;border-radius:0;box-shadow:none;overflow:visible}
- .dtabs{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scroll-padding-inline:var(--pad);margin-inline:calc(-1 * var(--pad));padding:2px var(--pad) 8px;scrollbar-width:none}
- .dtabs::-webkit-scrollbar{display:none}
- .dtabs .dtab,.dbar.compact .dtab,.dl-slim .dtab{flex:0 0 auto;display:flex;align-items:center;gap:8px;width:auto;padding:6px 14px 6px 6px;border:1px solid var(--line2);border-radius:12px;background:var(--surface);scroll-snap-align:start;box-shadow:0 4px 12px rgba(15,31,53,.07)}
+ .dtabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .dtabs .dtab,.dbar.compact .dtab,.dl-slim .dtab{display:flex;align-items:center;gap:8px;width:auto;min-width:0;min-height:48px;padding:7px 12px;border:1px solid var(--line2);border-radius:12px;background:var(--surface);box-shadow:0 4px 12px rgba(15,31,53,.07)}
  .dtabs .dtab:last-child,.dtabs .dtab:nth-child(2n){border-right:1px solid var(--line2)}
  .dtabs .dtab:nth-child(-n+2){border-bottom:1px solid var(--line2)}
- .dtabs .dtab figure,.dbar.compact .dtab figure{order:-1;width:34px;height:34px;border-radius:8px;flex:none}
- .dtabs .dtab b,.dbar.compact .dtab b{font-size:14px;white-space:nowrap;line-height:1.2}
+ .dtabs .dtab>span{min-width:0}
+ .dtabs .dtab figure,.dbar.compact .dtab figure{display:none}
+ .dtabs .dtab b,.dbar.compact .dtab b{font-size:14px;line-height:1.22;white-space:normal;hyphens:manual}
  .dtabs .dtab span{margin-top:0}
  .dtabs .dtab span span{display:none}
  .dtabs .dtab .chev{display:none}
@@ -835,6 +852,8 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
  .dtabs .dtab[aria-selected="true"],.dtabs .dtab[aria-current="page"]{background:var(--navy);border-color:var(--navy)}
  .dtabs .dtab[aria-selected="true"] b,.dtabs .dtab[aria-current="page"] b{color:#fff}
  :root{--pad:18px;--hdr:64px}
+ html{overflow-x:hidden}
+ body{overflow-x:clip}
  .sec{padding-block:40px}
  h2{font-size:26px;line-height:1.15}
  .hd{margin-bottom:16px}
@@ -856,7 +875,7 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
  .slab b{font-size:21px}
  .slab span{font-size:12.5px;line-height:1.3;margin-top:4px}
  /* direction panes */
- .pane{scroll-margin-top:calc(var(--hdr) + 74px)}
+ .pane{scroll-margin-top:calc(var(--hdr) + 134px)}
  .spane{scroll-margin-top:calc(var(--hdr) + 70px)}
  .dirs .dmain{padding-top:20px}
  .pane h2,.dirs .pane h2{font-size:24px;margin-bottom:10px}
@@ -884,10 +903,6 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
  /* about */
  .about h2{margin-bottom:12px}
  .about-g{gap:24px!important}
- .lgv{gap:10px}
- .lgs{width:190px!important;height:190px!important}
- .lgc{gap:8px}
- .lc{padding:10px 14px}.lc b{font-size:15px}.lc span{font-size:13px;margin-top:2px}
  .certs{margin-top:28px;padding-top:24px;gap:14px}
  .certs h3{font-size:20px;margin-bottom:8px}
  .badges li{grid-template-columns:62px minmax(0,1fr);gap:12px;padding:10px 0}
@@ -930,7 +945,8 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
  .foot{padding-block:30px 20px}
  .fg{grid-template-columns:1fr;gap:18px;padding-bottom:20px}
  .foot h3{font-size:14px;margin-bottom:6px}
- .foot li a{font-size:14px;padding:5px 0}
+ .foot ul{gap:0}
+ .foot li a{font-size:14px;padding:4px 0}
  .foot .fa,.foot .fb{font-size:13px;margin-top:8px}
  .fbot{font-size:12.5px;padding-top:14px}
  /* mail picker */
@@ -1048,8 +1064,8 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
 <div class="dbar-ph"><div class="dbar card" role="tablist" aria-label="Направления"><div class="dtabs">
 <button class="dtab" role="tab" type="button" id="dt1" data-href="zavod-ets-proektirovanie.html" aria-controls="dp1" aria-selected="true"><span><b>Проектирование</b><span>Расчёты, схемы, документация</span></span><figure><img src="foto/m/shema-obogreva.jpg" alt=""></figure><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
 <button class="dtab" role="tab" type="button" id="dt2" data-href="zavod-ets-proizvodstvo.html" aria-controls="dp2" aria-selected="false"><span><b>Производство</b><span>Оборудование собственного завода</span></span><figure><img src="foto/m/g-proizv.jpg" alt=""></figure><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
-<button class="dtab" role="tab" type="button" id="dt3" data-href="zavod-ets-montazh-elektroobogreva.html" aria-controls="dp3" aria-selected="false"><span><b>Монтаж систем электрообогрева</b><span>Собственная монтажная группа</span></span><figure><img src="foto/m/g-montazh.jpg" alt=""></figure><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
-<button class="dtab" role="tab" type="button" id="dt4" data-href="zavod-ets-montazh-teploizolyacii.html" aria-controls="dp4" aria-selected="false"><span><b>Монтаж теплоизоляции</b><span>Трубопроводы и оборудование</span></span><figure><img src="foto/m/g-izolyaciya.jpg" alt=""></figure><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+<button class="dtab" role="tab" type="button" id="dt3" data-href="zavod-ets-montazh-elektroobogreva.html" aria-controls="dp3" aria-selected="false"><span><b>Монтаж систем электро&shy;обогрева</b><span>Собственная монтажная группа</span></span><figure><img src="foto/m/g-montazh.jpg" alt=""></figure><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+<button class="dtab" role="tab" type="button" id="dt4" data-href="zavod-ets-montazh-teploizolyacii.html" aria-controls="dp4" aria-selected="false"><span><b>Монтаж тепло&shy;изоляции</b><span>Трубопроводы и оборудование</span></span><figure><img src="foto/m/g-izolyaciya.jpg" alt=""></figure><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
 </div></div></div>
 <div class="dmain">
 <div class="pane on" id="dp1" role="tabpanel" aria-labelledby="dt1"><div class="pg"><div><h2>Проектирование</h2><p>Проектно-конструкторский отдел разрабатывает проектную и рабочую документацию по техническому заданию Заказчика и привязывает решения к реальным объектам его инфраструктуры. Работаем в тесном взаимодействии с техническими отделами Заказчика.</p><ul><li>Теплотехнические и электротехнические расчёты</li><li>Схемы низковольтных устройств</li><li>Системы управления, интеграция с АСУ ТП</li><li>Визуализация проекта</li></ul><div class="pane-links"><a class="tl" href="zavod-ets-proektirovanie.html"><u>Подробнее о проектировании</u><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><span class="pl-sep" aria-hidden="true"></span><a class="pdf" href="zavod-ets-oprosnye-listy.html"><i><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M8.5 10h7M8.5 13.5h7M8.5 17h4"/></svg></i><u>Опросные листы</u></a></div></div><figure class="fit"><img src="foto/m/shema-obogreva.jpg" alt="Принципиальная схема системы электрообогрева"></figure></div></div>
@@ -1321,9 +1337,32 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
  (function(){var v=document.getElementById('lgv');if(!v)return;var rm=false,started=false,cur=0;
   function ping(i){var c=v.querySelector('.lc[data-i="'+i+'"]');if(!c)return;c.classList.add('ping');setTimeout(function(){c.classList.remove('ping')},650)}
   function ripple(i){var r=document.getElementById('rp'+i);if(!r)return;r.style.animation='none';void r.getBoundingClientRect();r.style.animation='lgRipple .9s ease-out'}
-  function pulse(i){try{document.getElementById('pm'+i).beginElement();document.getElementById('po'+i).beginElement();}catch(e){}setTimeout(function(){ping(i);ripple(i)},800)}
+  /* phone: draw traces from the logo's five branch ends to the five cards */
+  var mq=window.matchMedia?matchMedia('(max-width:640px)'):null,NS='http://www.w3.org/2000/svg',ND=[[126,11.8],[142,35.7],[142,76.9],[142,118],[126,141.9]],DL=[2.4,2.8,3.1,3.6,4.0],gm=null,tr=[];
+  function mob(){return !!(mq&&mq.matches)}
+  function lay(){if(!mob()){if(gm)gm.style.display='none';return}
+   var lg=v.querySelector('.lgs'),cs=v.querySelectorAll('.lc');if(!lg||cs.length<5)return;
+   var vb=v.getBoundingClientRect(),lb=lg.getBoundingClientRect(),s=lb.width/154,W=vb.width,H=vb.height;
+   if(!gm){gm=document.createElementNS(NS,'svg');gm.setAttribute('class','lgm');gm.setAttribute('aria-hidden','true');v.insertBefore(gm,v.firstChild);
+    for(var k=0;k<5;k++){var p=document.createElementNS(NS,'path');p.setAttribute('class','t');p.setAttribute('id','lgt'+(k+1));p.setAttribute('pathLength','1');p.style.setProperty('--t',DL[k]+'s');
+     var c=document.createElementNS(NS,'circle');c.setAttribute('class','pad');c.setAttribute('r','2.6');c.style.setProperty('--t2',(DL[k]+.38)+'s');
+     var d=document.createElementNS(NS,'circle');d.setAttribute('class','p');d.setAttribute('r','2.4');
+     var m=document.createElementNS(NS,'animateMotion');m.setAttribute('dur','.4s');m.setAttribute('begin','indefinite');m.setAttribute('fill','freeze');
+     var mp=document.createElementNS(NS,'mpath');mp.setAttribute('href','#lgt'+(k+1));m.appendChild(mp);d.appendChild(m);
+     var o=document.createElementNS(NS,'animate');o.setAttribute('attributeName','opacity');o.setAttribute('values','0;1;1;0');o.setAttribute('keyTimes','0;.15;.8;1');o.setAttribute('dur','.4s');o.setAttribute('begin','indefinite');o.setAttribute('fill','freeze');d.appendChild(o);
+     gm.appendChild(p);gm.appendChild(c);gm.appendChild(d);tr.push({p:p,c:c,m:m,o:o})}}
+   gm.style.display='';gm.setAttribute('width',W);gm.setAttribute('height',H);gm.setAttribute('viewBox','0 0 '+W+' '+H);
+   var gc=v.querySelector('.lgc'),ox=gc?gc.offsetLeft:0,oy=gc?gc.offsetTop:0,L=lb.right-vb.left,cx0=ox+cs[0].offsetLeft,g=Math.max(10,cx0-L);
+   for(var k=0;k<5;k++){var cd=cs[k],cy=oy+cd.offsetTop+cd.offsetHeight/2,cx=ox+cd.offsetLeft,nx=lb.left-vb.left+(ND[k][0]+6)*s,ny=lb.top-vb.top+ND[k][1]*s,
+     ch=L+g*([.32,.62,.5,.62,.32][k]),dy=cy-ny,r=Math.min(5,Math.abs(dy)/2),sg=dy>0?1:-1,d;
+    if(Math.abs(dy)<1.5)d='M'+nx+' '+ny+'H'+cx;
+    else d='M'+nx+' '+ny+'H'+(ch-r)+'Q'+ch+' '+ny+' '+ch+' '+(ny+sg*r)+'V'+(cy-sg*r)+'Q'+ch+' '+cy+' '+(ch+r)+' '+cy+'H'+cx;
+    tr[k].p.setAttribute('d',d);tr[k].c.setAttribute('cx',cx);tr[k].c.setAttribute('cy',cy)}}
+  var lt=0;addEventListener('resize',function(){clearTimeout(lt);lt=setTimeout(lay,120)});if(document.fonts&&document.fonts.ready)document.fonts.ready.then(lay);lay();
+  function pulse(i){try{document.getElementById('pm'+i).beginElement();document.getElementById('po'+i).beginElement();}catch(e){}
+   setTimeout(function(){ripple(i);if(mob()&&tr[i-1]){try{tr[i-1].m.beginElement();tr[i-1].o.beginElement()}catch(e){}setTimeout(function(){ping(i)},380)}else ping(i)},800)}
   function loop(){setInterval(function(){cur=cur%5+1;pulse(cur)},1600)}
-  function run(){if(started)return;started=true;v.classList.add('in');setTimeout(function(){v.classList.add('done');loop()},4700)}
+  function run(){if(started)return;started=true;lay();v.classList.add('in');setTimeout(function(){v.classList.add('done');loop()},4700)}
   if('IntersectionObserver' in window){var io=new IntersectionObserver(function(en){var r=en[0],need=innerWidth>=1024?.85:.12;if(r.isIntersecting&&r.intersectionRatio>=need&&!window.__gliding){io.disconnect();run()}},{threshold:[0,.12,.3,.5,.7,.85,.95,1]});io.observe(v);addEventListener('scroll',function(){if(started)return;var b=v.getBoundingClientRect(),vis=Math.max(0,Math.min(b.bottom,innerHeight)-Math.max(b.top,0))/(b.height||1);if(vis>=(innerWidth>=1024?.85:.12)&&!window.__gliding){io.disconnect();run()}},{passive:true})}else run();
   v.querySelectorAll('.lc').forEach(function(c){var i=c.dataset.i,b=document.getElementById('lb'+i);c.addEventListener('pointerenter',function(){if(b)b.classList.add('hi');if(v.classList.contains('done'))ripple(i)});c.addEventListener('pointerleave',function(){if(b)b.classList.remove('hi')});});
  })();
