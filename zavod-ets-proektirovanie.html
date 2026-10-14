@@ -1778,8 +1778,18 @@ function buildTank(R,data){var S=new Scene(R),RS=1.027,Y0=0.75,Y1=7.3,OY=0.78;
  function TR(x){var ph=Math.asin(clamp(x/RS,-0.95,0.95)),c=Math.cos(ph),sn=Math.sin(ph);return function(n){var l=[-n[0],n[2],n[1]];return[l[0]*c+l[2]*sn,l[1],-l[0]*sn+l[2]*c]}}
  var PPL=TB(0.2,BY+0.25),TPL=TB(-0.75,BY+0.25),GR=PPL(KP(89,20,38)),GL=PPL(KP(-114,20,38)),CF=TPL(KP(-93.9,-20,38));
  path=smooth([GR,[GR[0]-0.1,GR[1],GR[2]],[GR[0]-0.13,BY-0.3,RC+0.08],[0,BY-0.42,RC]],0.08,10);
- var turns=7,yTop=BY-0.4,yBot=0.95;
- for(var k=0;k<=turns*48;k++){var t=k/(turns*48),a=AZ+t*turns*Math.PI*2,y=yTop+(yBot-yTop)*t;path.push([Math.cos(a)*RC*0+Math.sin(a)*0+Math.cos(a)*RC,y,Math.sin(a)*RC])}
+ /* horizontal serpentine on the lower shell: runs go round the tank and turn back with a U-bend in a gap at the rear,
+    fixed to vertical mounting strips (as tanks are traced in practice, instead of one continuous spiral) */
+ var k,NR=8,yTop=BY-0.4,yBot=0.95,SP=(yTop-yBot)/(NR-1),DEG=Math.PI/180,AS=-75*DEG,AE=255*DEG,UB=(SP/2)/RC;
+ function TP(a,y){return[Math.cos(a)*RC,y,Math.sin(a)*RC]}
+ function run(a0,a1,y){var q=[],n=Math.max(2,Math.ceil(Math.abs(a1-a0)/(3*DEG)));for(var k=1;k<=n;k++)q.push(TP(a0+(a1-a0)*k/n,y));return q}
+ function ubend(a,y,dir){var q=[];for(var k=1;k<=12;k++){var t=k/12;q.push(TP(a+dir*UB*Math.sin(Math.PI*t),y-SP*(1-Math.cos(Math.PI*t))/2))}return q}
+ var runs=[];var a=AZ,dir=1;
+ for(var i=0;i<NR;i++){var y=yTop-i*SP,a1=i==NR-1?44*DEG:(dir>0?AE:AS);var r=run(a,a1,y);runs.push(r);path=path.concat(r);a=a1;if(i<NR-1){path=path.concat(ubend(a,y,dir));dir=-dir}}
+ /* vertical mounting strips + aluminium tape at every crossing */
+ var stp=G(),stt=G();for(var sa=-60;sa<=240;sa+=30){var A=sa*DEG,c=Math.cos(A),sn=Math.sin(A),R=RS+0.006,t=[-sn,0,c],nn=[c,0,sn],b0=stp.p.length/3,y0=yBot-0.12,y1=yTop+0.12,hw=0.022;
+  [[-1,y0],[1,y0],[1,y1],[-1,y1]].forEach(function(q,i){pushV(stp,[c*R+t[0]*q[0]*hw,q[1],sn*R+t[2]*q[0]*hw],nn,[i==1||i==2?1:0,i>1?1:0])});stp.i.push(b0,b0+1,b0+2,b0,b0+2,b0+3)}
+ runs.forEach(function(r){tapes(stt,r,10,0,0,0.05,0.08,0.03)});
  /* drop to outlet */
  var last=path[path.length-1];path.push([0.75,0.86,0.72]);path.push([1.0,OY+0.06,0.13]);
  for(var x=1.05;x<PX1-0.1;x+=0.2)path.push([x,OY+0.0+(PR+0.016)*Math.cos(2.3),(PR+0.016)*Math.sin(2.3)]);
@@ -1788,34 +1798,35 @@ function buildTank(R,data){var S=new Scene(R),RS=1.027,Y0=0.75,Y1=7.3,OY=0.78;
  var endP=path[path.length-1];
  var cable=S.add('cable',tube(G(),path,0.028,8),MAT.cable,{group:'heat',prog:0});
  outside(S,path,function(p){return Math.sqrt(p[0]*p[0]+p[2]*p[2])<RS+0.138&&p[1]>Y0&&p[1]<Y1},0.036);
+ S.add('strip',stp,MAT.steel,{group:'heat'});S.add('tape',stt,MAT.tape,{group:'heat'});
  var es=yToX(cyl(G(),0.04,-0.1,0.1,16,0,Math.PI*2,true,true));moveG(es,endP[0]-0.1,endP[1],endP[2]);S.add('endseal',es,MAT.gland,{group:'heat'});
  /* boxes on the shell (front side) */
  function sbox(key,x,y){var b=G();box(b,0.4,0.3,0.22,x,y,RS+0.33);S.add(key,b,MAT.box,{group:'heat'});var l=G();box(l,0.4,0.04,0.225,x,y+0.17,RS+0.33);S.add(key,l,MAT.boxlid,{group:'heat'});
   var br=G();box(br,0.06,0.06,0.24,x,y-0.05,RS+0.11);S.add(key,br,MAT.steel,{group:'heat'});
   [-0.1,0.1].forEach(function(dx){var gl=cyl(G(),0.03,y-0.22,y-0.15,14,0,Math.PI*2,true,true);moveG(gl,x+dx,0,RS+0.33);S.add(key,gl,MAT.gland,{group:'heat'})})}
  kbox(S,'pbox',PPL,TR(0.2));kbox(S,'tbox',TPL,TR(-0.75));
- var SXT=-0.55,sp=[SXT,2.78,Math.sqrt(RC*RC-SXT*SXT)+0.02];function zOn(x){return Math.sqrt(Math.max(0,RC*RC-x*x))}var sg=cyl(G(),0.035,-0.1,0.1,14,0,Math.PI*2,true,true);moveG(sg,sp[0],sp[1],sp[2]);S.add('sensor',sg,MAT.sensor,{group:'heat'});
+ var SXT=-0.55,sp=[SXT,yTop-SP/2,Math.sqrt(RC*RC-SXT*SXT)+0.02];function zOn(x){return Math.sqrt(Math.max(0,RC*RC-x*x))}var sg=cyl(G(),0.035,-0.1,0.1,14,0,Math.PI*2,true,true);moveG(sg,sp[0],sp[1],sp[2]);S.add('sensor',sg,MAT.sensor,{group:'heat'});
  var tcap=smooth([CF,[CF[0]+0.07,CF[1],CF[2]],[SXT-0.05,CF[1]-0.12,zOn(SXT-0.05)+0.12],[SXT,sp[1]+0.14,zOn(SXT)+0.03],[SXT,sp[1]+0.1,sp[2]]],0.06,8);S.add('sensor',tube(G(),tcap,0.009,6),MAT.steel,{group:'heat',prog:0});
  outside(S,tcap,function(p){return Math.sqrt(p[0]*p[0]+p[2]*p[2])<RS+0.138&&p[1]>Y0&&p[1]<Y1},0.022,'shose','sentry');
  /* cabinet */
  var CX=3.0,CZ=2.6,CB=cabinet(S,CX,CZ,-1),G0=CB.gland,HR=0.036;
  S.add('pcable',corr(G(),smooth([G0,[G0[0]-0.12,G0[1],G0[2]],[G0[0]-0.14,HR,G0[2]],[GL[0]+0.34,HR,GL[2]+0.15],[GL[0]+0.34,GL[1],GL[2]],GL],0.14,12),HR,0.032),MAT.hose,{group:'heat',prog:0});
  /* insulation + cladding (lift off the tank when exploded) */
- function vshell(key,r,mat){var g=cyl(G(),r,Y0,Y1,64,0,Math.PI*2);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[0,4,0]})}
- vshell('insT',RS+0.11,MAT.insul);vshell('cladT',RS+0.135,MAT.clad);
+ function vshell(key,r,mat,first){[first,-first].forEach(function(sd){var a0=sd>0?-Math.PI/2:Math.PI/2,g=cyl(G(),r,Y0,Y1,40,a0,a0+Math.PI);var o=S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[sd*0.6,4,0]});o.sd=sd})}
+ vshell('insT',RS+0.11,MAT.insul,-1);vshell('cladT',RS+0.135,MAT.clad,1);
  var pi=yToX(cyl(G(),PR+0.07,PX0+0.05,PX1-0.12,32,0,Math.PI*2));moveG(pi,0,OY,0);S.add('insB',pi,MAT.insul,{group:'ins',alpha:0,blend:true,twoPass:true,center:[3,OY,0]});
  var pc2=yToX(cyl(G(),PR+0.085,PX0+0.05,PX1-0.12,32,0,Math.PI*2));moveG(pc2,0,OY,0);S.add('cladB',pc2,MAT.clad,{group:'ins',alpha:0,blend:true,twoPass:true,center:[3,OY,0]});
  S.layers={ins:0.42,clad:0.24,jacket:0.5};
- S.explode=function(o,e){if(o.key=='cladT')o.pos=[0,4.6*e,0];else if(o.key=='insT')o.pos=[0,2.3*e,0];else if(o.key=='cladB')o.pos=[0,0,0.9*e];else if(o.key=='insB')o.pos=[0,0,0.45*e]};
+ S.explode=function(o,e){if(o.key=='cladT')o.pos=[o.sd*1.7*e,0,0];else if(o.key=='insT')o.pos=[o.sd*0.85*e,0,0];else if(o.key=='cladB')o.pos=[0,0,0.9*e];else if(o.key=='insB')o.pos=[0,0,0.45*e]};
  S.labels=[
-  {k:'cable',t:'Греющий кабель',p:[Math.cos(1.15)*RC,1.05,Math.sin(1.15)*RC],n:[0.4,0,0.92],step:2,dy:46},
+  {k:'cable',t:'Греющий кабель',p:TP(1.15,yBot+SP),n:[0.4,0,0.92],step:2,dy:46},
   {k:'pbox',t:'Коробка подключения ЭТС МК',p:PPL(KP(0,0,96)),n:[0,.3,1],step:2},
   {k:'tbox',t:'Термостат',p:TPL(KP(0,0,96)),n:[0,.3,1],step:3,side:'l'},
   {k:'sensor',t:'Датчик температуры',p:sp,n:[0,0,1],step:3,side:'l',dy:40},
   {k:'endseal',t:'Обогрев трубопровода',p:[3.6,OY+0.15,0.1],n:[0,.5,1],step:3,dy:40},
   {k:'cab',t:'Шкаф управления ЭТС ШУО',p:[CX,CB.top+0.04,CZ],n:[0,.3,1],step:1},
-  {k:'insT',t:'Теплоизоляция',p:[-0.6,5.4,RS+0.11],n:[-.3,0,1],step:4,ex:true,side:'l'},
-  {k:'cladT',t:'Защитный кожух',p:[0.75,6.4,RS+0.135],n:[.5,0,1],step:4,ex:true}];
+  {k:'insT',t:'Теплоизоляция',p:[-0.6,5.4,Math.sqrt(Math.pow(RS+0.11,2)-0.36)],n:[-.5,0,.85],step:4,ex:true,side:'l'},
+  {k:'cladT',t:'Защитный кожух',p:[0.75,6.4,Math.sqrt(Math.pow(RS+0.135,2)-0.5625)],n:[.6,0,.8],step:4,ex:true}];
  S.cableLen=cable.buf.len;return S}
 
 /* ---------- viewer ---------- */
@@ -1861,7 +1872,7 @@ Viewer.prototype.toggleHeat=function(){var self=this,S=this.cur;this.anims=this.
  pop('cab',0);pop('lamp',0);at(0,function(){self.labStep=1});
  pop('pcable',650,1300);
  /* 2. the junction box appears where the hose arrives, the heating cable leaves it and runs along the object */
- pop('pbox',1850);at(1850,function(){self.labStep=Math.max(self.labStep,2)});
+ pop('pbox',1850);pop('strip',2050);at(1850,function(){self.labStep=Math.max(self.labStep,2)});
  at(2350,function(){S.list.forEach(function(o){if(o.key=='cable'){o.visible=true;o.prog=0;o.__heat=1;self.tw('prog',1.001,2600,o,null,0,function(t){return t})}})});
  pop('chose',2350,450);pop('centry',2750);
  at(3500,function(){S.list.forEach(function(o){if(o.key=='tape'){o.visible=true;o.s=0;o.__heat=1;self.tw('s',1,500,o,null,Math.random()*500,easeOutBack);}})});
