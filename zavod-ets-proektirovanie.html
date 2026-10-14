@@ -1421,7 +1421,7 @@ a.dtab:hover{color:var(--ink)}a.dtab[aria-current="page"]:hover{color:#fff;backg
 <div class="m3"><canvas aria-label="Интерактивная 3D-модель системы электрообогрева"></canvas><div class="m3-labels" aria-hidden="true"></div>
 <div class="m3-load">Загружаем 3D-модель…</div>
 <div class="m3-hint"><span class="d">Вращайте мышью · Ctrl + колесо: масштаб · двойной клик: исходный вид</span><span class="t">Проведите пальцем, чтобы повернуть</span></div>
-<div class="m3-temp" aria-live="polite"><i></i>Обогрев включён · <b>−60 °C</b></div>
+
 <div class="m3-ui"><button type="button" class="m3-p" data-m3="heat"><span>Показать систему электрообогрева</span></button><button type="button" class="m3-s" data-m3="explode" disabled><span>Разобрать по слоям</span></button></div>
 <div class="m3-zoom"><button type="button" data-m3="in" aria-label="Приблизить">+</button><button type="button" data-m3="out" aria-label="Отдалить">−</button><button type="button" data-m3="reset" aria-label="Исходный вид">⟲</button></div>
 <div class="m3-fallback"><p>Ваш браузер не поддерживает 3D-графику. Схема системы — на изображении выше.</p></div>
@@ -1485,6 +1485,22 @@ function tube(g,pts,r,rs){rs=rs||8;var L=[0];for(var k=1;k<pts.length;k++)L.push
   for(var s=0;s<=rs;s++){var a=2*Math.PI*s/rs,n=add(scl(Nn,Math.cos(a)),scl(B,Math.sin(a)));pushV(g,add(pts[k],scl(n,r)),n,[L[k]/tot,s/rs])}}
  for(k=0;k<pts.length-1;k++)for(s=0;s<rs;s++){var a0=base+k*(rs+1)+s,b0=a0+rs+1;g.i.push(a0,b0,a0+1,a0+1,b0,b0+1)}
  g.len=tot;return g}
+/* rounded polyline: every corner gets a smooth bend (quadratic fillet) so cables never look broken */
+function smooth(pts,r,seg){seg=seg||10;if(pts.length<3)return pts.slice();var out=[pts[0]];
+ for(var k=1;k<pts.length-1;k++){var A=pts[k-1],B=pts[k],C=pts[k+1],a=sub(A,B),c=sub(C,B),la=len(a),lc=len(c),d=Math.min(r,la*0.5,lc*0.5);
+  if(d<1e-4){out.push(B);continue}var P1=add(B,scl(a,d/la)),P2=add(B,scl(c,d/lc));
+  for(var s=0;s<=seg;s++){var t=s/seg,u=1-t;out.push([u*u*P1[0]+2*u*t*B[0]+t*t*P2[0],u*u*P1[1]+2*u*t*B[1]+t*t*P2[1],u*u*P1[2]+2*u*t*B[2]+t*t*P2[2]])}}
+ out.push(pts[pts.length-1]);return out}
+/* metal corrugated hose around a cable: path resampled, radius rippled with matching normals */
+function corr(g,pts,r,pitch){var L=[0],k;for(k=1;k<pts.length;k++)L.push(L[k-1]+len(sub(pts[k],pts[k-1])));var tot=L[L.length-1]||1,n=Math.max(2,Math.ceil(tot/(pitch/5))),P=[],j=0;
+ for(var i=0;i<=n;i++){var d=tot*i/n;while(j<pts.length-2&&L[j+1]<d)j++;var t=(d-L[j])/((L[j+1]-L[j])||1);P.push(add(pts[j],scl(sub(pts[j+1],pts[j]),t)))}
+ var rs=12,base=g.p.length/3,T0=nrm(sub(P[1],P[0])),ref=Math.abs(T0[1])<.9?[0,1,0]:[1,0,0],Nn=nrm(cross(T0,ref)),B;
+ for(k=0;k<P.length;k++){var T=nrm(k==0?sub(P[1],P[0]):k==P.length-1?sub(P[k],P[k-1]):sub(P[k+1],P[k-1]));Nn=nrm(sub(Nn,scl(T,dot(Nn,T))));B=cross(T,Nn);
+  var ph=tot*k/n/pitch*Math.PI*2,rr=r*(1+0.17*Math.cos(ph)),sl=-r*0.17*Math.sin(ph)*Math.PI*2/pitch;
+  for(var q=0;q<=rs;q++){var a=2*Math.PI*q/rs,rad=add(scl(Nn,Math.cos(a)),scl(B,Math.sin(a)));pushV(g,add(P[k],scl(rad,rr)),nrm(sub(rad,scl(T,sl))),[k/(P.length-1),q/rs])}}
+ for(k=0;k<P.length-1;k++)for(q=0;q<rs;q++){var a0=base+k*(rs+1)+q,b0=a0+rs+1;g.i.push(a0,b0,a0+1,a0+1,b0,b0+1)}g.len=tot;return g}
+function quad(g,cx,cy,z,w,h){var b=g.p.length/3;pushV(g,[cx-w/2,cy-h/2,z],[0,0,1],[0,1]);pushV(g,[cx+w/2,cy-h/2,z],[0,0,1],[1,1]);pushV(g,[cx+w/2,cy+h/2,z],[0,0,1],[1,0]);pushV(g,[cx-w/2,cy+h/2,z],[0,0,1],[0,0]);g.i.push(b,b+1,b+2,b,b+2,b+3);return g}
+function yToZ(g){for(var k=0;k<g.p.length;k+=3){var y=g.p[k+1],z=g.p[k+2];g.p[k+1]=-z;g.p[k+2]=y;y=g.n[k+1];z=g.n[k+2];g.n[k+1]=-z;g.n[k+2]=y}return g}
 function disc(g,r,y,seg){var c=pushV(g,[0,y,0],[0,1,0],[.5,.5]),b=g.p.length/3;for(var s=0;s<=seg;s++){var a=2*Math.PI*s/seg;pushV(g,[Math.cos(a)*r,y,Math.sin(a)*r],[0,1,0],[.5+Math.cos(a)*.5,.5+Math.sin(a)*.5])}for(s=0;s<seg;s++)g.i.push(c,b+s+1,b+s);return g}
 /* rotate geometry so its +Y axis points along +X (for horizontal pipes) */
 function yToX(g){for(var k=0;k<g.p.length;k+=3){var x=g.p[k],y=g.p[k+1];g.p[k]=y;g.p[k+1]=-x;x=g.n[k];y=g.n[k+1];g.n[k]=y;g.n[k+1]=-x}return g}
@@ -1561,7 +1577,8 @@ var MAT={
  valve:{color:hex('#1F63B5'),metal:.3,rough:.35},wheel:{color:hex('#D7262B'),metal:.2,rough:.35},
  cable:{color:hex('#F06A1C'),metal:.05,rough:.45,emis:[1.0,0.32,0.05]},tape:{color:hex('#D8DEE4'),metal:.85,rough:.3},
  box:{color:hex('#DCE2E8'),metal:.15,rough:.35},boxlid:{color:hex('#1B62C4'),metal:.25,rough:.35},gland:{color:hex('#1E242C'),metal:.5,rough:.4},
- cab:{color:hex('#E6EAEE'),metal:.2,rough:.35},screen:{color:[0.02,0.06,0.12],metal:0,rough:.2},
+ cab:{color:hex('#D3D6D2'),metal:.25,rough:.45},screen:{color:[0.02,0.06,0.12],metal:0,rough:.2},plinth:{color:hex('#3E444C'),metal:.3,rough:.55},
+ door:{color:[1,1,1],metal:.22,rough:.45},hose:{color:hex('#A9B1B9'),metal:.8,rough:.32},knob:{color:hex('#2A2F36'),metal:.4,rough:.4},chrome:{color:hex('#C8CDD2'),metal:.9,rough:.22},
  insul:{color:hex('#E8D58C'),metal:0,rough:.85},clad:{color:hex('#C4CED8'),metal:.9,rough:.28},jacket:{color:hex('#55606C'),metal:.05,rough:.9},
  pcable:{color:hex('#20262E'),metal:.1,rough:.6},
  kbody:{color:hex('#24282E'),metal:.25,rough:.38},kgland:{color:hex('#BFC3C7'),metal:.75,rough:.32},kmetal:{color:hex('#BEBCBA'),metal:.85,rough:.28},ksleeve:{color:hex('#E0DFDB'),metal:.1,rough:.5},sensor:{color:hex('#C9D1D9'),metal:.8,rough:.3},ground:{color:hex('#E9EDF1'),metal:0,rough:1}
@@ -1597,6 +1614,44 @@ Scene.prototype.add=function(key,g,mat,opt){opt=opt||{};var o={key:key,buf:this.
 Scene.prototype.ground=function(r,cx,cz,shR){var g=disc(G(),r,0,64);this.add('floor',g,MAT.ground,{tex:this.R.canvasTex(floorCanvas()),texA:true,unlit:true,blend:true,pos:[cx||0,-0.002,cz||0],center:[0,-50,0]});
  var s=disc(G(),shR||r*.55,0.001,48);this.add('shadow',s,{color:[1,1,1],metal:0,rough:1},{tex:this.R.canvasTex(shadowCanvas()),texA:true,unlit:true,blend:true,pos:[cx||0,0,cz||0],scl:[1.6,1,0.7],center:[0,-49,0]})};
 
+/* ---------- control cabinet ---------- */
+function doorCanvas(){var c=document.createElement('canvas');c.width=256;c.height=512;var x=c.getContext('2d');
+ var g=x.createLinearGradient(0,0,256,0);g.addColorStop(0,'#C9CCC8');g.addColorStop(.18,'#D8DAD6');g.addColorStop(.85,'#D5D7D3');g.addColorStop(1,'#C4C7C3');x.fillStyle=g;x.fillRect(0,0,256,512);
+ x.strokeStyle='rgba(55,62,70,.7)';x.lineWidth=4;x.strokeRect(2,2,252,508);x.strokeStyle='rgba(255,255,255,.55)';x.lineWidth=2;x.strokeRect(8,8,240,496);
+ /* nameplate */
+ x.fillStyle='#B9BEC3';x.fillRect(84,30,88,26);x.strokeStyle='#8D949B';x.lineWidth=1.5;x.strokeRect(84,30,88,26);
+ x.fillStyle='#2B3440';x.font='bold 11px Arial';x.textAlign='center';x.fillText('ЗАВОД ЭТС',128,42);x.font='9px Arial';x.fillText('ЭТС ШУО',128,52);
+ /* warning sticker */
+ var cx=128,cy=316;x.beginPath();x.moveTo(cx,cy-24);x.lineTo(cx+27,cy+21);x.lineTo(cx-27,cy+21);x.closePath();x.fillStyle='#F2C200';x.fill();x.lineWidth=4;x.strokeStyle='#151515';x.lineJoin='round';x.stroke();
+ x.beginPath();x.moveTo(cx+3,cy-11);x.lineTo(cx-6,cy+4);x.lineTo(cx+1,cy+4);x.lineTo(cx-4,cy+16);x.lineTo(cx+7,cy-1);x.lineTo(cx,cy-1);x.closePath();x.fillStyle='#151515';x.fill();
+ /* label strip under the lamps */
+ x.fillStyle='rgba(43,52,64,.55)';x.font='8px Arial';x.fillText('СЕТЬ',100,138);x.fillText('ОБОГРЕВ',156,138);
+ return c}
+function screenCanvas(){var c=document.createElement('canvas');c.width=128;c.height=96;var x=c.getContext('2d');
+ x.fillStyle='#0B2546';x.fillRect(0,0,128,96);x.fillStyle='#1B62C4';x.fillRect(0,0,128,14);x.fillStyle='#DCE8F5';x.fillRect(6,5,40,4);
+ for(var k=0;k<4;k++){var y=22+k*17;x.fillStyle='#16365F';x.fillRect(6,y,116,12);x.fillStyle=k<3?'#3BD26A':'#F2A23A';x.beginPath();x.arc(13,y+6,3,0,7);x.fill();x.fillStyle='#9FB6CF';x.fillRect(21,y+4,44,4);x.fillStyle='#DCE8F5';x.fillRect(92,y+3,24,6)}
+ return c}
+/* floor cabinet on a plinth; front faces +z; gland on the side (gx = +1 right / -1 left); returns the gland end point */
+function cabinet(S,CX,CZ,gx){var W=0.86,D=0.42,PH=0.1,H=1.55,y0=PH,T=y0+H,F=CZ+D/2,o;
+ var p=G();box(p,W-0.03,PH,D-0.03,CX,PH/2,CZ);S.add('cab',p,MAT.plinth,{group:'heat'});
+ var b=G();box(b,W,H,D,CX,y0+H/2,CZ);box(b,W+0.024,0.026,D+0.024,CX,T+0.013,CZ);S.add('cab',b,MAT.cab,{group:'heat'});
+ var dw=W-0.03,dh=H-0.03,dy=y0+H/2;var dr=G();box(dr,dw,dh,0.012,CX,dy,F+0.006);S.add('cab',dr,MAT.cab,{group:'heat'});
+ S.add('cab',quad(G(),CX,dy,F+0.0125,dw,dh),MAT.door,{group:'heat',tex:S.R.canvasTex(doorCanvas())});
+ /* hinges, handle, lock */
+ var hg=G();[0.2,0.82].forEach(function(f){var h=cyl(G(),0.012,y0+H*f-0.05,y0+H*f+0.05,10,0,Math.PI*2,true,true);moveG(h,CX-dw/2-0.004,0,F+0.008);hg.p=hg.p.concat(h.p);var bs=hg.n.length;hg.n=hg.n.concat(h.n);hg.u=hg.u.concat(h.u);var off=(hg.p.length-h.p.length)/3;h.i.forEach(function(i){hg.i.push(i+off)})});S.add('cab',hg,MAT.knob,{group:'heat'});
+ var hd=G();box(hd,0.05,0.2,0.012,CX+dw/2-0.08,y0+H*0.5,F+0.018);box(hd,0.026,0.15,0.03,CX+dw/2-0.08,y0+H*0.5+0.01,F+0.036);S.add('cab',hd,MAT.knob,{group:'heat'});
+ var lk=yToZ(cyl(G(),0.016,0,0.02,14,0,Math.PI*2,true,true));moveG(lk,CX+dw/2-0.08,y0+H*0.5-0.16,F+0.012);S.add('cab',lk,MAT.chrome,{group:'heat'});
+ /* operator panel */
+ var hy=y0+H*0.645,fr=G();box(fr,0.22,0.17,0.02,CX,hy,F+0.022);S.add('cab',fr,MAT.knob,{group:'heat'});
+ S.add('cab',quad(G(),CX,hy+0.005,F+0.0325,0.18,0.135),{color:[1,1,1],metal:0,rough:.2},{group:'heat',tex:S.R.canvasTex(screenCanvas()),unlit:true});
+ /* pilot lamps: green = mains, amber = heating */
+ var ly=hy+0.15;[[-0.055,'#3F8F56',[0.25,1.5,0.4]],[0.055,'#B88A2E',[1.5,0.75,0.12]]].forEach(function(l){
+  var rg=yToZ(cyl(G(),0.026,0,0.016,18,0,Math.PI*2,true,true));moveG(rg,CX+l[0],ly,F+0.012);S.add('cab',rg,MAT.chrome,{group:'heat'});
+  S.add('lamp',sphere(G(),0.019,10,[CX+l[0],ly,F+0.028]),{color:hex(l[1]),metal:0,rough:.3,emis:l[2]},{group:'heat'})});
+ /* side cable gland */
+ var gxp=CX+gx*W/2,gl=yToX(cyl(G(),0.03,0,0.06,16,0,Math.PI*2,true,true));for(var k=0;k<gl.p.length;k+=3){gl.p[k]*=gx;gl.n[k]*=gx}moveG(gl,gxp,0.32,CZ);S.add('cab',gl,MAT.chrome,{group:'heat'});
+ return{gland:[gxp+gx*0.06,0.32,CZ],top:T,front:F}}
+
 /* --- pipeline --- */
 function buildPipe(R){var S=new Scene(R),Y=1.3,PR=0.22,X0=-4.4,X1=4.4,VX=1.55;
  S.cam={target:[-0.7,1.15,0.4],dist:11.8,yaw:-0.62,pitch:0.3,min:5,max:20};
@@ -1621,7 +1676,7 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,PR=0.22,X0=-4.4,X1=4.4,VX=1.55;
  function PL(x){return function(p){return[x+p[0]*KS,YF+p[1]*KS,p[2]*KS]}}
  var PPL=PL(BOXX),TPL=PL(TBX),GR=PPL(KP(89,20,38)),GL=PPL(KP(-114,20,38)),W0=GR[0]+0.1;
  /* heating cable leaves the right gland and goes down to the pipe */
- path.push(GR);path.push([GR[0]+0.05,GR[1]-0.01,GR[2]]);path.push([GR[0]+0.09,GR[1]-0.09,GR[2]*0.5]);path.push([W0,Y+RC+0.07,0]);path.push(onPipe(W0,0));
+ W0=GR[0]+0.14;path=smooth([GR,[GR[0]+0.1,GR[1],GR[2]],[GR[0]+0.12,Y+RC+0.12,GR[2]*0.3],onPipe(W0,0)],0.07,10);
  var th=0,x=W0,A1=2.35;for(k=1;k<=24;k++){th=A1*k/24;x=W0+0.32*k/24;path.push(onPipe(x,th))}
  for(x=W0+0.5;x<VX-0.42;x+=0.25)path.push(onPipe(x,A1));
  /* loops around the valve body for its extra heat losses */
@@ -1642,14 +1697,11 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,PR=0.22,X0=-4.4,X1=4.4,VX=1.55;
  kbox(S,'pbox',PPL,function(n){return n});kbox(S,'tbox',TPL,function(n){return n});
  /* temperature sensor + capillary */
  var CF=TPL(KP(-93.9,-20,38)),sx=TBX-0.42,sp2=onPipe(sx,Math.PI*0.92);var sg=yToX(cyl(G(),0.03,-0.08,0.08,14,0,Math.PI*2,true,true));moveG(sg,sx,sp2[1],sp2[2]);S.add('sensor',sg,MAT.sensor,{group:'heat'});
- var cap=[CF,[CF[0]-0.04,CF[1]-0.05,CF[2]+0.02],[CF[0]-0.07,Y+RC+0.06,0.08],onPipe(CF[0]-0.08,0.6),onPipe(CF[0]-0.11,1.6),onPipe(sx+0.03,2.6),[sx,sp2[1],sp2[2]]];S.add('sensor',tube(G(),cap,0.008,6),MAT.steel,{group:'heat',prog:0});
+ var cap=smooth([CF,[CF[0]-0.05,CF[1],CF[2]],[CF[0]-0.07,Y+RC+0.08,0.1],onPipe(CF[0]-0.09,0.7),onPipe(CF[0]-0.12,1.6),onPipe(sx+0.03,2.6),[sx,sp2[1],sp2[2]]],0.05,8);S.add('sensor',tube(G(),cap,0.008,6),MAT.steel,{group:'heat',prog:0});
  /* control cabinet */
- var CX=-5.3,CZ=1.9,cg=G();box(cg,0.7,1.0,0.32,CX,1.15,CZ);S.add('cab',cg,MAT.cab,{group:'heat'});
- var cl=G();box(cl,0.05,0.65,0.05,CX-0.25,0.33,CZ);box(cl,0.05,0.65,0.05,CX+0.25,0.33,CZ);box(cl,0.8,0.04,0.4,CX,0.02,CZ);S.add('cab',cl,MAT.dark,{group:'heat'});
- var scr=G();box(scr,0.26,0.12,0.01,CX,1.42,CZ+0.165);S.add('cab',scr,MAT.screen,{group:'heat'});
- var lamp=sphere(G(),0.03,8,[CX+0.2,1.42,CZ+0.17]);var lo=S.add('lamp',lamp,{color:hex('#9AA6B2'),metal:0,rough:.4,emis:[1.2,0.5,0.1]},{group:'heat'});
- var pc=[[CX,0.66,CZ],[CX,0.06,CZ],[CX+0.6,0.06,CZ-0.3],[BOXX-0.6,0.06,0.5],[GL[0]-0.12,0.06,0.42],[GL[0]-0.12,GL[1]-0.12,0.42],[GL[0]-0.09,GL[1]-0.02,0.1],[GL[0]-0.03,GL[1],GL[2]],GL];
- S.add('pcable',tube(G(),pc,0.028,8),MAT.pcable,{group:'heat',prog:0});
+ var CX=-5.3,CZ=1.9,CB=cabinet(S,CX,CZ,1),G0=CB.gland,HR=0.034;
+ var pc=smooth([G0,[G0[0]+0.12,G0[1],G0[2]],[G0[0]+0.14,HR,G0[2]],[GL[0]-0.3,HR,0.46],[GL[0]-0.3,GL[1],0.46],[GL[0]-0.3,GL[1],GL[2]],GL],0.13,12);
+ S.add('pcable',corr(G(),pc,HR,0.03),MAT.hose,{group:'heat',prog:0});
  /* thermal jacket on the valve */
  var jk=G();box(jk,0.62,0.66,0.6,VX,Y+0.14,0);S.add('jacket',jk,MAT.jacket,{group:'ins',alpha:0,blend:true,twoPass:true,center:[VX,Y,0]});
  /* insulation and cladding: two halves each, so they can be pulled apart */
@@ -1660,12 +1712,12 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,PR=0.22,X0=-4.4,X1=4.4,VX=1.55;
  S.layers={ins:0.42,clad:0.24,jacket:0.5};
  S.explode=function(o,e){if(o.key=='cladT')o.pos=[0,1.05*e,0];else if(o.key=='cladB')o.pos=[0,-0.62*e,0];else if(o.key=='insT')o.pos=[0,0.55*e,0];else if(o.key=='insB')o.pos=[0,-0.35*e,0];else if(o.key=='jacket')o.pos=[0,0.9*e,0]};
  S.labels=[
-  {k:'cable',t:'Греющий кабель',p:onPipe(-2.7,A1),n:[0,-.3,.9],step:1,dy:44,side:'l'},
+  {k:'cable',t:'Греющий кабель',p:onPipe(-2.7,A1),n:[0,-.3,.9],step:2,dy:44,side:'l'},
   {k:'pbox',t:'Коробка подключения ЭТС МК',p:PPL(KP(0,64,45)),n:[0,1,.3],step:2,side:'l'},
-  {k:'tbox',t:'Термостат',p:TPL(KP(0,64,45)),n:[0,1,.3],step:2},
-  {k:'sensor',t:'Датчик температуры',p:[sx,sp2[1]-0.02,sp2[2]],n:[0,-.6,.6],step:2,dy:44},
-  {k:'endseal',t:'Концевая заделка',p:endP,n:[0,-.4,-.9],step:2,side:'l',dy:40},
-  {k:'cab',t:'Шкаф управления ЭТС ШУО',p:[CX,1.75,CZ],n:[0,.3,1],step:3,side:'l'},
+  {k:'tbox',t:'Термостат',p:TPL(KP(0,64,45)),n:[0,1,.3],step:3},
+  {k:'sensor',t:'Датчик температуры',p:[sx,sp2[1]-0.02,sp2[2]],n:[0,-.6,.6],step:3,dy:44},
+  {k:'endseal',t:'Концевая заделка',p:endP,n:[0,-.4,-.9],step:3,side:'l',dy:40},
+  {k:'cab',t:'Шкаф управления ЭТС ШУО',p:[CX,CB.top+0.04,CZ],n:[0,.3,1],step:1,side:'l'},
   {k:'jacket',t:'Термочехол на задвижке',p:[VX,Y+0.55,0.3],n:[0,.4,1],step:4},
   {k:'insT',t:'Теплоизоляция',p:[2.7,Y+PR+0.1,0.18],n:[0,1,.5],step:4,ex:true,side:'l'},
   {k:'cladT',t:'Защитный кожух',p:[3.5,Y+PR+0.12,0.18],n:[0,1,.5],step:4,ex:true}];
@@ -1691,7 +1743,7 @@ function buildTank(R,data){var S=new Scene(R),RS=1.027,Y0=0.75,Y1=7.3,OY=0.78;
   return function(p){var l=[-p[0]*KS,p[2]*KS,p[1]*KS];return[RS*sn+l[0]*c+l[2]*sn,y+l[1],RS*c-l[0]*sn+l[2]*c]}}
  function TR(x){var ph=Math.asin(clamp(x/RS,-0.95,0.95)),c=Math.cos(ph),sn=Math.sin(ph);return function(n){var l=[-n[0],n[2],n[1]];return[l[0]*c+l[2]*sn,l[1],-l[0]*sn+l[2]*c]}}
  var PPL=TB(0.2,BY+0.25),TPL=TB(-0.75,BY+0.25),GR=PPL(KP(89,20,38)),GL=PPL(KP(-114,20,38)),CF=TPL(KP(-93.9,-20,38));
- path.push(GR);path.push([GR[0]-0.02,GR[1]-0.1,GR[2]-0.04]);path.push([0.0,BY-0.25,RC+0.05]);
+ path=smooth([GR,[GR[0]-0.1,GR[1],GR[2]],[GR[0]-0.13,BY-0.3,RC+0.08],[0,BY-0.42,RC]],0.08,10);
  var turns=7,yTop=BY-0.4,yBot=0.95;
  for(var k=0;k<=turns*48;k++){var t=k/(turns*48),a=AZ+t*turns*Math.PI*2,y=yTop+(yBot-yTop)*t;path.push([Math.cos(a)*RC*0+Math.sin(a)*0+Math.cos(a)*RC,y,Math.sin(a)*RC])}
  /* drop to outlet */
@@ -1708,13 +1760,10 @@ function buildTank(R,data){var S=new Scene(R),RS=1.027,Y0=0.75,Y1=7.3,OY=0.78;
   [-0.1,0.1].forEach(function(dx){var gl=cyl(G(),0.03,y-0.22,y-0.15,14,0,Math.PI*2,true,true);moveG(gl,x+dx,0,RS+0.33);S.add(key,gl,MAT.gland,{group:'heat'})})}
  kbox(S,'pbox',PPL,TR(0.2));kbox(S,'tbox',TPL,TR(-0.75));
  var sp=[-0.55,1.6,RC+0.02];var sg=cyl(G(),0.035,-0.1,0.1,14,0,Math.PI*2,true,true);moveG(sg,sp[0],sp[1],sp[2]);S.add('sensor',sg,MAT.sensor,{group:'heat'});
- S.add('sensor',tube(G(),[CF,[CF[0]+0.03,CF[1]-0.1,CF[2]-0.04],[CF[0]+0.06,CF[1]-0.35,RC*Math.cos(Math.asin(clamp((CF[0]+0.06)/RC,-0.95,0.95)))+0.05],[-0.65,2.6,RC+0.03],[-0.58,2.0,RC+0.03],sp],0.009,6),MAT.steel,{group:'heat',prog:0});
+ S.add('sensor',tube(G(),smooth([CF,[CF[0]+0.06,CF[1],CF[2]],[CF[0]+0.08,CF[1]-0.3,RC*Math.cos(Math.asin(clamp((CF[0]+0.08)/RC,-0.95,0.95)))+0.05],[-0.65,2.6,RC+0.03],[-0.58,2.0,RC+0.03],sp],0.08,8),0.009,6),MAT.steel,{group:'heat',prog:0});
  /* cabinet */
- var CX=3.0,CZ=2.6,cg=G();box(cg,0.8,1.15,0.36,CX,1.3,CZ);S.add('cab',cg,MAT.cab,{group:'heat'});
- var cl=G();box(cl,0.05,0.75,0.05,CX-0.3,0.37,CZ);box(cl,0.05,0.75,0.05,CX+0.3,0.37,CZ);box(cl,0.9,0.04,0.45,CX,0.02,CZ);S.add('cab',cl,MAT.dark,{group:'heat'});
- var scr=G();box(scr,0.3,0.14,0.01,CX,1.6,CZ+0.185);S.add('cab',scr,MAT.screen,{group:'heat'});
- S.add('lamp',sphere(G(),0.035,8,[CX+0.24,1.6,CZ+0.19]),{color:hex('#9AA6B2'),metal:0,rough:.4,emis:[1.2,0.5,0.1]},{group:'heat'});
- S.add('pcable',tube(G(),[[CX,0.72,CZ],[CX,0.07,CZ],[1.8,0.07,2.0],[0.9,0.07,1.6],[0.45,0.07,1.45],[GL[0]+0.07,1.2,GL[2]],[GL[0]+0.07,GL[1]-0.1,GL[2]],[GL[0]+0.02,GL[1],GL[2]],GL],0.03,8),MAT.pcable,{group:'heat',prog:0});
+ var CX=3.0,CZ=2.6,CB=cabinet(S,CX,CZ,-1),G0=CB.gland,HR=0.036;
+ S.add('pcable',corr(G(),smooth([G0,[G0[0]-0.12,G0[1],G0[2]],[G0[0]-0.14,HR,G0[2]],[GL[0]+0.34,HR,GL[2]+0.15],[GL[0]+0.34,GL[1],GL[2]],GL],0.14,12),HR,0.032),MAT.hose,{group:'heat',prog:0});
  /* insulation + cladding (lift off the tank when exploded) */
  function vshell(key,r,mat){var g=cyl(G(),r,Y0,Y1,64,0,Math.PI*2);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[0,4,0]})}
  vshell('insT',RS+0.11,MAT.insul);vshell('cladT',RS+0.135,MAT.clad);
@@ -1723,12 +1772,12 @@ function buildTank(R,data){var S=new Scene(R),RS=1.027,Y0=0.75,Y1=7.3,OY=0.78;
  S.layers={ins:0.42,clad:0.24,jacket:0.5};
  S.explode=function(o,e){if(o.key=='cladT')o.pos=[0,4.6*e,0];else if(o.key=='insT')o.pos=[0,2.3*e,0];else if(o.key=='cladB')o.pos=[0,0,0.9*e];else if(o.key=='insB')o.pos=[0,0,0.45*e]};
  S.labels=[
-  {k:'cable',t:'Греющий кабель',p:[Math.cos(1.15)*RC,1.05,Math.sin(1.15)*RC],n:[0.4,0,0.92],step:1,dy:46},
+  {k:'cable',t:'Греющий кабель',p:[Math.cos(1.15)*RC,1.05,Math.sin(1.15)*RC],n:[0.4,0,0.92],step:2,dy:46},
   {k:'pbox',t:'Коробка подключения ЭТС МК',p:PPL(KP(0,0,96)),n:[0,.3,1],step:2},
-  {k:'tbox',t:'Термостат',p:TPL(KP(0,0,96)),n:[0,.3,1],step:2,side:'l'},
-  {k:'sensor',t:'Датчик температуры',p:sp,n:[0,0,1],step:2,side:'l',dy:40},
-  {k:'endseal',t:'Обогрев трубопровода',p:[3.6,OY+0.15,0.1],n:[0,.5,1],step:2,dy:40},
-  {k:'cab',t:'Шкаф управления ЭТС ШУО',p:[CX,1.95,CZ],n:[0,.3,1],step:3},
+  {k:'tbox',t:'Термостат',p:TPL(KP(0,0,96)),n:[0,.3,1],step:3,side:'l'},
+  {k:'sensor',t:'Датчик температуры',p:sp,n:[0,0,1],step:3,side:'l',dy:40},
+  {k:'endseal',t:'Обогрев трубопровода',p:[3.6,OY+0.15,0.1],n:[0,.5,1],step:3,dy:40},
+  {k:'cab',t:'Шкаф управления ЭТС ШУО',p:[CX,CB.top+0.04,CZ],n:[0,.3,1],step:1},
   {k:'insT',t:'Теплоизоляция',p:[-0.6,5.4,RS+0.11],n:[-.3,0,1],step:4,ex:true,side:'l'},
   {k:'cladT',t:'Защитный кожух',p:[0.75,6.4,RS+0.135],n:[.5,0,1],step:4,ex:true}];
  S.cableLen=cable.buf.len;return S}
@@ -1771,20 +1820,22 @@ Viewer.prototype.toggleHeat=function(){var self=this,S=this.cur;this.anims=this.
   this.labStep=0;this.ui();this.temp(null);return}
  this.state.showing=true;this.labStep=0;this.ui();this.user();this.auto=true;
  var T=0;function at(ms,f){setTimeout(f,ms)}
- /* 1. cable draws itself */
- S.list.forEach(function(o){if(o.key=='cable'){o.visible=true;o.prog=0;o.__heat=1;self.tw('prog',1.001,2600,o,null,0,function(t){return t})}});
- at(500,function(){self.labStep=Math.max(self.labStep,1)});
- at(1700,function(){S.list.forEach(function(o){if(o.key=='tape'){o.visible=true;o.s=0;o.__heat=1;self.tw('s',1,500,o,null,Math.random()*500,easeOutBack);}})});
- /* 2. boxes, sensor, end seal pop in */
- var order=['endseal','pbox','tbox','sensor'];order.forEach(function(k,i){at(2400+i*350,function(){S.list.forEach(function(o){if(o.key==k){o.visible=true;o.__heat=1;if(o.prog!==undefined){o.prog=0;self.tw('prog',1.001,700,o)}else{o.s=0;self.tw('s',1,550,o,null,0,easeOutBack)}}});self.labStep=Math.max(self.labStep,2)})});
- /* 3. cabinet + supply cable */
- at(3900,function(){S.list.forEach(function(o){if(o.key=='cab'||o.key=='lamp'){o.visible=true;o.__heat=1;o.s=0;self.tw('s',1,600,o,null,0,easeOutBack)}if(o.key=='pcable'){o.visible=true;o.prog=0;self.tw('prog',1.001,1100,o)}});self.labStep=Math.max(self.labStep,3)});
+ function pop(k,ms,dur){at(ms,function(){S.list.forEach(function(o){if(o.key==k){o.visible=true;o.__heat=1;if(o.prog!==undefined){o.prog=0;self.tw('prog',1.001,dur||700,o,null,0,function(t){return t})}else{o.s=0;self.tw('s',1,550,o,null,0,easeOutBack)}}})})}
+ /* 1. control cabinet, then the power cable in its metal hose runs to the junction box */
+ pop('cab',0);pop('lamp',0);at(0,function(){self.labStep=1});
+ pop('pcable',650,1300);
+ /* 2. the junction box appears where the hose arrives, the heating cable leaves it and runs along the object */
+ pop('pbox',1850);at(1850,function(){self.labStep=Math.max(self.labStep,2)});
+ at(2350,function(){S.list.forEach(function(o){if(o.key=='cable'){o.visible=true;o.prog=0;o.__heat=1;self.tw('prog',1.001,2600,o,null,0,function(t){return t})}})});
+ at(3500,function(){S.list.forEach(function(o){if(o.key=='tape'){o.visible=true;o.s=0;o.__heat=1;self.tw('s',1,500,o,null,Math.random()*500,easeOutBack);}})});
+ /* 3. end seal where the cable ends, thermostat with its sensor */
+ pop('endseal',5100);pop('tbox',5400);pop('sensor',5700,700);at(5400,function(){self.labStep=Math.max(self.labStep,3)});
  /* 4. insulation, cladding, jacket */
- at(5300,function(){S.list.forEach(function(o){if(o.group=='ins'){var a=o.key.indexOf('ins')==0?S.layers.ins:o.key=='jacket'?S.layers.jacket:S.layers.clad;self.tw('alpha',a,900,o)}});self.labStep=Math.max(self.labStep,4)});
+ at(6500,function(){S.list.forEach(function(o){if(o.group=='ins'){var a=o.key.indexOf('ins')==0?S.layers.ins:o.key=='jacket'?S.layers.jacket:S.layers.clad;self.tw('alpha',a,900,o)}});self.labStep=Math.max(self.labStep,4)});
  /* 5. power on */
- at(6400,function(){self.power(true)})};
+ at(7600,function(){self.power(true)})};
 Viewer.prototype.power=function(on){var self=this,S=this.cur;this.state.power=on?1:0;S.list.forEach(function(o){if(o.key=='cable'||o.key=='lamp'){self.tw('glow',on?1:0,1200,o)}});
- if(on){var v={t:-60};this.temp(v.t);this.tw('t',5,5200,v,null,0,function(t){return 1-Math.pow(1-t,2)});this._tv=v}else this.temp(null)};
+ this.temp(null)};
 Viewer.prototype.temp=function(v){var el=this.root.querySelector('.m3-temp');if(!el)return;if(v===null){el.classList.remove('on');this._tv=null;return}el.classList.add('on')};
 Viewer.prototype.toggleExplode=function(){if(!this.state.showing)return;this.state.exploded=!this.state.exploded;var e=this.state.exploded?1:0,S=this.cur,self=this;
  S.list.forEach(function(o){if(o.group=='ins'){o.e=o.e||0;self.tw('e',e,1100,o)}});this.ui();this.user();if(e)this.tw('dist',Math.min(this.cur.cam.max,this.cur.cam.dist*1.15),900)};
