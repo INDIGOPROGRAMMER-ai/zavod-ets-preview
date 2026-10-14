@@ -1501,6 +1501,14 @@ function corr(g,pts,r,pitch){var L=[0],k;for(k=1;k<pts.length;k++)L.push(L[k-1]+
   var ph=tot*k/n/pitch*Math.PI*2,rr=r*(1+0.17*Math.cos(ph)),sl=-r*0.17*Math.sin(ph)*Math.PI*2/pitch;
   for(var q=0;q<=rs;q++){var a=2*Math.PI*q/rs,rad=add(scl(Nn,Math.cos(a)),scl(B,Math.sin(a)));pushV(g,add(P[k],scl(rad,rr)),nrm(sub(rad,scl(T,sl))),[k/(P.length-1),q/rs])}}
  for(k=0;k<P.length-1;k++)for(q=0;q<rs;q++){var a0=base+k*(rs+1)+q,b0=a0+rs+1;g.i.push(a0,b0,a0+1,a0+1,b0,b0+1)}g.len=tot;return g}
+/* part of a cable that runs outside the insulation: from the box gland until it dives under the cladding;
+   it gets a metal hose and an insulation entry fitting */
+function outside(S,path,isIn,r){var pr=[path[0]];for(var k=1;k<path.length;k++){var p=path[k];if(isIn(p)){var a=path[k-1],lo=0,hi=1;for(var it=0;it<20;it++){var m=(lo+hi)/2;if(isIn(add(a,scl(sub(p,a),m))))hi=m;else lo=m}pr.push(add(a,scl(sub(p,a),hi)));break}pr.push(p)}
+ if(pr.length<2)return;S.add('chose',corr(G(),pr,r,0.022),MAT.hose,{group:'heat',prog:0});
+ var e=pr[pr.length-1],d=nrm(sub(e,pr[pr.length-2]));S.add('centry',tube(G(),[sub(e,scl(d,0.05)),add(e,scl(d,0.01))],r*1.7,16),MAT.chrome,{group:'heat'});
+ var ca=G();disc(ca,r*1.7,0,16);/* end cap of the fitting, facing back along the hose */var up=scl(d,-1),ref=Math.abs(up[1])<.9?[0,1,0]:[1,0,0],xa=nrm(cross(ref,up)),za=cross(xa,up),c0=sub(e,scl(d,0.05));
+ for(var k=0;k<ca.p.length;k+=3){var x=ca.p[k],y=ca.p[k+1],z=ca.p[k+2];ca.p[k]=c0[0]+xa[0]*x+up[0]*y+za[0]*z;ca.p[k+1]=c0[1]+xa[1]*x+up[1]*y+za[1]*z;ca.p[k+2]=c0[2]+xa[2]*x+up[2]*y+za[2]*z;ca.n[k]=up[0];ca.n[k+1]=up[1];ca.n[k+2]=up[2]}
+ S.add('centry',ca,MAT.chrome,{group:'heat'})}
 function quad(g,cx,cy,z,w,h){var b=g.p.length/3;pushV(g,[cx-w/2,cy-h/2,z],[0,0,1],[0,1]);pushV(g,[cx+w/2,cy-h/2,z],[0,0,1],[1,1]);pushV(g,[cx+w/2,cy+h/2,z],[0,0,1],[1,0]);pushV(g,[cx-w/2,cy+h/2,z],[0,0,1],[0,0]);g.i.push(b,b+1,b+2,b,b+2,b+3);return g}
 function yToZ(g){for(var k=0;k<g.p.length;k+=3){var y=g.p[k+1],z=g.p[k+2];g.p[k+1]=-z;g.p[k+2]=y;y=g.n[k+1];z=g.n[k+2];g.n[k+1]=-z;g.n[k+2]=y}return g}
 function disc(g,r,y,seg){var c=pushV(g,[0,y,0],[0,1,0],[.5,.5]),b=g.p.length/3;for(var s=0;s<=seg;s++){var a=2*Math.PI*s/seg;pushV(g,[Math.cos(a)*r,y,Math.sin(a)*r],[0,1,0],[.5+Math.cos(a)*.5,.5+Math.sin(a)*.5])}for(s=0;s<seg;s++)g.i.push(c,b+s+1,b+s);return g}
@@ -1688,6 +1696,7 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,PR=0.22,X0=-4.4,X1=4.4,VX=1.55;
  for(x=X1-0.4;x>BOXX+0.1;x-=0.25)path.push(onPipe(x,2*Math.PI-A1));
  var endP=onPipe(BOXX+0.05,2*Math.PI-A1);path.push(endP);
  var cable=S.add('cable',tube(G(),path,0.022,8),MAT.cable,{group:'heat',prog:0});
+ outside(S,path,function(p){var dy=p[1]-Y;return Math.sqrt(dy*dy+p[2]*p[2])<PR+0.118},0.032);
  /* aluminium tape bands */
  for(x=X0+0.5;x<X1-0.2;x+=0.9){if(Math.abs(x-VX)<0.5)continue;var tb=yToX(cyl(G(),RC+0.026,x-0.03,x+0.03,40,0,Math.PI*2));moveG(tb,0,Y,0);S.add('tape',tb,MAT.tape,{group:'heat'})}
  /* end seal */
@@ -1755,6 +1764,7 @@ function buildTank(R,data){var S=new Scene(R),RS=1.027,Y0=0.75,Y1=7.3,OY=0.78;
  for(x=PX1-0.2;x>1.15;x-=0.2)path.push([x,OY+(PR+0.016)*Math.cos(2*Math.PI-2.3),(PR+0.016)*Math.sin(2*Math.PI-2.3)]);
  var endP=path[path.length-1];
  var cable=S.add('cable',tube(G(),path,0.028,8),MAT.cable,{group:'heat',prog:0});
+ outside(S,path,function(p){return Math.sqrt(p[0]*p[0]+p[2]*p[2])<RS+0.138&&p[1]>Y0&&p[1]<Y1},0.036);
  var es=yToX(cyl(G(),0.04,-0.1,0.1,16,0,Math.PI*2,true,true));moveG(es,endP[0]-0.1,endP[1],endP[2]);S.add('endseal',es,MAT.gland,{group:'heat'});
  /* boxes on the shell (front side) */
  function sbox(key,x,y){var b=G();box(b,0.4,0.3,0.22,x,y,RS+0.33);S.add(key,b,MAT.box,{group:'heat'});var l=G();box(l,0.4,0.04,0.225,x,y+0.17,RS+0.33);S.add(key,l,MAT.boxlid,{group:'heat'});
@@ -1829,6 +1839,7 @@ Viewer.prototype.toggleHeat=function(){var self=this,S=this.cur;this.anims=this.
  /* 2. the junction box appears where the hose arrives, the heating cable leaves it and runs along the object */
  pop('pbox',1850);at(1850,function(){self.labStep=Math.max(self.labStep,2)});
  at(2350,function(){S.list.forEach(function(o){if(o.key=='cable'){o.visible=true;o.prog=0;o.__heat=1;self.tw('prog',1.001,2600,o,null,0,function(t){return t})}})});
+ pop('chose',2350,450);pop('centry',2750);
  at(3500,function(){S.list.forEach(function(o){if(o.key=='tape'){o.visible=true;o.s=0;o.__heat=1;self.tw('s',1,500,o,null,Math.random()*500,easeOutBack);}})});
  /* 3. end seal where the cable ends, thermostat with its sensor */
  pop('endseal',5100);pop('tbox',5400);pop('sensor',5700,700);at(5400,function(){self.labStep=Math.max(self.labStep,3)});
