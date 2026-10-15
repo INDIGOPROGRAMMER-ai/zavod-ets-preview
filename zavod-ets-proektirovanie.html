@@ -1688,7 +1688,8 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,PR=0.22,X0=-4.4,X1=4.4,VX=1.55;
  function PL(x){return function(p){return[x+p[0]*KS,YF+p[1]*KS,p[2]*KS]}}
  var PPL=PL(BOXX),TPL=PL(TBX),GR=PPL(KP(89,20,38)),GL=PPL(KP(-114,20,38)),W0=GR[0]+0.1;
  /* heating cable leaves the right gland and goes down to the pipe */
- W0=GR[0]+0.14;path=smooth([GR,[GR[0]+0.1,GR[1],GR[2]],[GR[0]+0.12,Y+RC+0.12,GR[2]*0.3],onPipe(W0,0)],0.07,10);
+ /* the heating cable leaves the box through its leg (entry under insulation) and starts right under the saddle */
+ W0=BOXX;path=[onPipe(W0,0)];
  var th=0,x=W0,A1=2.35;for(k=1;k<=24;k++){th=A1*k/24;x=W0+0.32*k/24;path.push(onPipe(x,th))}
  for(x=W0+0.5;x<VX-0.6;x+=0.25)path.push(onPipe(x,A1));
  /* valve: the cable hugs the valve body (body cylinder + bonnet block) instead of cutting through it.
@@ -1713,7 +1714,6 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,PR=0.22,X0=-4.4,X1=4.4,VX=1.55;
  var endP=onPipe(BOXX+0.05,2*Math.PI-A1);path.push(endP);
  var cable=S.add('cable',tube(G(),path,0.022,8),MAT.cable,{group:'heat',prog:0});
  function inIns(p){var dy=p[1]-Y;return Math.sqrt(dy*dy+p[2]*p[2])<PR+0.118}
- outside(S,path,inIns,0.032);
  S.add('tape',vt,MAT.tape,{group:'heat'});
  /* aluminium tape bands */
  for(x=X0+0.5;x<X1-0.2;x+=0.9){if(Math.abs(x-VX)<0.5)continue;var tb=yToX(cyl(G(),RC+0.026,x-0.03,x+0.03,40,0,Math.PI*2));moveG(tb,0,Y,0);S.add('tape',tb,MAT.tape,{group:'heat'})}
@@ -1726,8 +1726,7 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,PR=0.22,X0=-4.4,X1=4.4,VX=1.55;
  kbox(S,'pbox',PPL,function(n){return n});kbox(S,'tbox',TPL,function(n){return n});
  /* temperature sensor + capillary */
  var CF=TPL(KP(-93.9,-20,38)),sx=TBX-0.38,SA=Math.PI*0.25,sp2=onPipe(sx,SA);var sg=yToX(cyl(G(),0.03,-0.08,0.08,14,0,Math.PI*2,true,true));moveG(sg,sx,sp2[1],sp2[2]);S.add('sensor',sg,MAT.sensor,{group:'heat'});
- var cap=smooth([CF,[CF[0]-0.06,CF[1],CF[2]],[sx+0.14,Y+0.43,0.16],vp(sx+0.1,SA*0.8,RC+0.02),vp(sx+0.09,SA,RC+0.01),[sx+0.08,sp2[1],sp2[2]]],0.05,8);S.add('sensor',tube(G(),cap,0.008,6),MAT.steel,{group:'heat',prog:0});
- outside(S,cap,inIns,0.02,'shose','sentry');
+ var cap=smooth([onPipe(TBX,0),onPipe(TBX-0.1,0.04),vp(sx+0.22,SA*0.75,RC-0.004),vp(sx+0.12,SA,RC-0.004),[sx+0.08,sp2[1],sp2[2]]],0.05,8);S.add('sensor',tube(G(),cap,0.008,6),MAT.steel,{group:'heat',prog:0});
  var sb=yToX(cyl(G(),RC+0.04,sx-0.03,sx+0.03,40,0,Math.PI*2));moveG(sb,0,Y,0);S.add('sensor',sb,MAT.tape,{group:'heat'});
  /* control cabinet */
  var CX=-5.3,CZ=1.9,CB=cabinet(S,CX,CZ,1),G0=CB.gland,HR=0.034;
@@ -1777,7 +1776,7 @@ function buildTank(R,data){var S=new Scene(R),RS=1.027,Y0=0.75,Y1=7.3,OY=0.78;
   return function(p){var l=[-p[0]*KS,p[2]*KS,p[1]*KS];return[RS*sn+l[0]*c+l[2]*sn,y+l[1],RS*c-l[0]*sn+l[2]*c]}}
  function TR(x){var ph=Math.asin(clamp(x/RS,-0.95,0.95)),c=Math.cos(ph),sn=Math.sin(ph);return function(n){var l=[-n[0],n[2],n[1]];return[l[0]*c+l[2]*sn,l[1],-l[0]*sn+l[2]*c]}}
  var PPL=TB(0.2,BY+0.25),TPL=TB(-0.75,BY+0.25),GR=PPL(KP(89,20,38)),GL=PPL(KP(-114,20,38)),CF=TPL(KP(-93.9,-20,38));
- path=smooth([GR,[GR[0]-0.1,GR[1],GR[2]],[GR[0]-0.13,BY-0.3,RC+0.08],[0,BY-0.42,RC]],0.08,10);
+ path=smooth([[0.2,BY+0.25,Math.sqrt(RC*RC-0.04)],[0.13,BY+0.02,Math.sqrt(RC*RC-0.0169)],[0,BY-0.4+0.14,RC],[0,BY-0.4,RC]],0.08,10);
  /* horizontal serpentine on the lower shell: runs go round the tank and turn back with a U-bend in a gap at the rear,
     fixed to vertical mounting strips (as tanks are traced in practice, instead of one continuous spiral) */
  var k,NR=8,yTop=BY-0.4,yBot=0.95,SP=(yTop-yBot)/(NR-1),DEG=Math.PI/180,AS=-75*DEG,AE=255*DEG,UB=(SP/2)/RC;
@@ -1797,7 +1796,6 @@ function buildTank(R,data){var S=new Scene(R),RS=1.027,Y0=0.75,Y1=7.3,OY=0.78;
  for(x=PX1-0.2;x>1.15;x-=0.2)path.push([x,OY+(PR+0.016)*Math.cos(2*Math.PI-2.3),(PR+0.016)*Math.sin(2*Math.PI-2.3)]);
  var endP=path[path.length-1];
  var cable=S.add('cable',tube(G(),path,0.028,8),MAT.cable,{group:'heat',prog:0});
- outside(S,path,function(p){return Math.sqrt(p[0]*p[0]+p[2]*p[2])<RS+0.138&&p[1]>Y0&&p[1]<Y1},0.036);
  S.add('strip',stp,MAT.steel,{group:'heat'});S.add('tape',stt,MAT.tape,{group:'heat'});
  var es=yToX(cyl(G(),0.04,-0.1,0.1,16,0,Math.PI*2,true,true));moveG(es,endP[0]-0.1,endP[1],endP[2]);S.add('endseal',es,MAT.gland,{group:'heat'});
  /* boxes on the shell (front side) */
@@ -1806,8 +1804,7 @@ function buildTank(R,data){var S=new Scene(R),RS=1.027,Y0=0.75,Y1=7.3,OY=0.78;
   [-0.1,0.1].forEach(function(dx){var gl=cyl(G(),0.03,y-0.22,y-0.15,14,0,Math.PI*2,true,true);moveG(gl,x+dx,0,RS+0.33);S.add(key,gl,MAT.gland,{group:'heat'})})}
  kbox(S,'pbox',PPL,TR(0.2));kbox(S,'tbox',TPL,TR(-0.75));
  var SXT=-0.55,sp=[SXT,yTop-SP/2,Math.sqrt(RC*RC-SXT*SXT)+0.02];function zOn(x){return Math.sqrt(Math.max(0,RC*RC-x*x))}var sg=cyl(G(),0.035,-0.1,0.1,14,0,Math.PI*2,true,true);moveG(sg,sp[0],sp[1],sp[2]);S.add('sensor',sg,MAT.sensor,{group:'heat'});
- var tcap=smooth([CF,[CF[0]+0.07,CF[1],CF[2]],[SXT-0.05,CF[1]-0.12,zOn(SXT-0.05)+0.12],[SXT,sp[1]+0.14,zOn(SXT)+0.03],[SXT,sp[1]+0.1,sp[2]]],0.06,8);S.add('sensor',tube(G(),tcap,0.009,6),MAT.steel,{group:'heat',prog:0});
- outside(S,tcap,function(p){return Math.sqrt(p[0]*p[0]+p[2]*p[2])<RS+0.138&&p[1]>Y0&&p[1]<Y1},0.022,'shose','sentry');
+ var tcap=smooth([[-0.75,BY+0.25,zOn(-0.75)],[-0.7,BY+0.05,zOn(-0.7)],[SXT,sp[1]+0.26,zOn(SXT)],[SXT,sp[1]+0.1,sp[2]]],0.06,8);S.add('sensor',tube(G(),tcap,0.009,6),MAT.steel,{group:'heat',prog:0});
  /* cabinet */
  var CX=3.0,CZ=2.6,CB=cabinet(S,CX,CZ,-1),G0=CB.gland,HR=0.036;
  S.add('pcable',corr(G(),smooth([G0,[G0[0]-0.12,G0[1],G0[2]],[G0[0]-0.14,HR,G0[2]],[GL[0]+0.34,HR,GL[2]+0.15],[GL[0]+0.34,GL[1],GL[2]],GL],0.14,12),HR,0.032),MAT.hose,{group:'heat',prog:0});
