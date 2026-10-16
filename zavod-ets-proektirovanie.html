@@ -1680,8 +1680,34 @@ function tapeAt(g,c,t,rd,w,l,off){var u=nrm(cross(t,rd)),c2=add(c,scl(rd,off)),b
 function hArc(Y,r,x0,x1,th0,th1,seg){var g=yToX(cyl(G(),r,x0,x1,seg||40,th0-Math.PI,th1-Math.PI));return moveG(g,0,Y,0)}
 function band(Y,x,r,w){return hArc(Y,r,x-w/2,x+w/2,0,Math.PI*2,40)}
 /* PFS hose clamp: stainless band round the pipe with its screw lock */
-function pfs(Y,x,r,thL){var g=band(Y,x,r,0.026),b=box(G(),0.034,0.026,0.058,0,0,0),c=Math.cos(thL),s=Math.sin(thL);
- xf(b,function(p){var rr=r+0.013+p[1];return[x+p[0],Y+rr*c-p[2]*s,rr*s+p[2]*c]},function(n){return[n[0],n[1]*c-n[2]*s,n[1]*s+n[2]*c]});return merge(g,b)}
+/* ---- clamp / tape bands: convex hull of the surface section and everything lying on it (cable, sensor, box foot),
+   so a band hugs the pipe or shell and rides over the parts under it, never through them ---- */
+function hull2(P){P=P.slice().sort(function(p,q){return p[0]-q[0]||p[1]-q[1]});function cr(o,a,b){return (a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0])}
+ var lo=[],up=[],k;for(k=0;k<P.length;k++){while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],P[k])<=1e-12)lo.pop();lo.push(P[k])}
+ for(k=P.length-1;k>=0;k--){while(up.length>=2&&cr(up[up.length-2],up[up.length-1],P[k])<=1e-12)up.pop();up.push(P[k])}
+ up.pop();lo.pop();return lo.concat(up)}
+function circ2(P,c,r,n){for(var k=0;k<n;k++){var a=2*Math.PI*k/n;P.push([c[0]+Math.cos(a)*r,c[1]+Math.sin(a)*r])}return P}
+/* frame fr: O origin, U/V the section axes, X the band axis. pts: section points [u,v]. w band width, t thickness */
+function hullBand(fr,pts,w,t){var H=hull2(pts),n=H.length,N=[],k,g=G();
+ for(k=0;k<n;k++){var a=H[(k+n-1)%n],b=H[k],c=H[(k+1)%n],e1=[b[0]-a[0],b[1]-a[1]],e2=[c[0]-b[0],c[1]-b[1]],l1=Math.hypot(e1[0],e1[1])||1,l2=Math.hypot(e2[0],e2[1])||1,
+  nx=e1[1]/l1+e2[1]/l2,ny=-e1[0]/l1-e2[0]/l2,ln=Math.hypot(nx,ny)||1;N.push([nx/ln,ny/ln])}
+ function W(p,s){return add(add(fr.O,add(scl(fr.U,p[0]),scl(fr.V,p[1]))),scl(fr.X,s))}function D(q){return add(scl(fr.U,q[0]),scl(fr.V,q[1]))}
+ function strip(fa,fb,fn){var b0=g.p.length/3;for(var k=0;k<=n;k++){var j=k%n;pushV(g,fa(j),fn(j),[k/n,0]);pushV(g,fb(j),fn(j),[k/n,1])}for(k=0;k<n;k++){var i=b0+k*2;g.i.push(i,i+2,i+1,i+1,i+2,i+3)}}
+ function O(j,s){return W([H[j][0]+N[j][0]*t,H[j][1]+N[j][1]*t],s)}
+ strip(function(j){return O(j,-w/2)},function(j){return O(j,w/2)},function(j){return D(N[j])});
+ strip(function(j){return W(H[j],-w/2)},function(j){return W(H[j],w/2)},function(j){return scl(D(N[j]),-1)});
+ strip(function(j){return W(H[j],w/2)},function(j){return O(j,w/2)},function(){return fr.X});
+ strip(function(j){return W(H[j],-w/2)},function(j){return O(j,-w/2)},function(){return scl(fr.X,-1)});
+ g.H=H;g.N=N;return g}
+/* PFS hose clamp = hull band + its screw housing, placed where the band runs along direction dir (in section coords) */
+function pfsBand(fr,pts,dir){var w=0.03,t=0.003,g=hullBand(fr,pts,w,t),H=g.H,N=g.N,best=0,bd=-1e9;
+ for(var k=0;k<H.length;k++){var d=H[k][0]*dir[0]+H[k][1]*dir[1];if(d>bd){bd=d;best=k}}
+ var rd=add(scl(fr.U,N[best][0]),scl(fr.V,N[best][1])),tg=cross(fr.X,rd),c=add(add(fr.O,add(scl(fr.U,H[best][0]),scl(fr.V,H[best][1]))),scl(rd,t+0.012));
+ var b=box(G(),0.042,0.024,0.06,0,0,0);xf(b,function(p){return add(c,add(add(scl(fr.X,p[0]),scl(rd,p[1])),scl(tg,p[2])))},function(n){return add(add(scl(fr.X,n[0]),scl(rd,n[1])),scl(tg,n[2]))});
+ var sc=yToX(cyl(G(),0.008,-0.03,0.03,10,0,Math.PI*2,true,true));xf(sc,function(p){return add(add(c,scl(rd,0.004)),add(add(scl(fr.X,p[1]*0),scl(tg,p[0])),scl(fr.X,p[2])))},function(n){return add(scl(tg,n[0]),scl(fr.X,n[2]))});
+ merge(b,sc);return merge(g,b)}
+/* section points of everything lying on the surface near a band: cable/lead centre lines within the band slab, as small circles */
+function onSec(paths,inSlab,toUV,P){paths.forEach(function(pp){var r=pp.r;pp.pts.forEach(function(p){if(inSlab(p))circ2(P,toUV(p),r,10)})});return P}
 /* valve with flanges: a small loop over each flange (the gasket stays reachable) and hairpins on the body
    ("reverse spiral": the cable lifts off for servicing without being cut) */
 function traceValve(o){var Y=o.Y,A=o.A,rc=o.rc,q=[],tp=[],k,t;function vp(x,th,r){return[x,Y+r*Math.cos(th),r*Math.sin(th)]}function rad(th){return[0,Math.cos(th),Math.sin(th)]}
@@ -1721,17 +1747,18 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,PR=0.22,X0=-4.4,X1=4.4,VX=1.55,SU
  SUP.forEach(function(x){var g=G();box(g,0.12,Y-PR-0.02,0.12,x,(Y-PR)/2,0);box(g,0.6,0.04,0.42,x,0.02,0);box(g,0.5,0.06,0.16,x,Y-PR-0.03,0);S.add('support',g,MAT.dark)});
  /* ---- heating system ---- */
  var RC=PR+0.016,A1=2.35,rc=0.022;function vp(x,th,r){return[x,Y+r*Math.cos(th),r*Math.sin(th)]}function onPipe(x,th){return vp(x,th,RC)}
- var BOXX=-3.95,TBX=-1.15,YF=Y+PR-0.004,END=4.08;
+ var BOXX=-3.2,TBX=-1.15,YF=Y+Math.sqrt(PR*PR-0.0039)+0.001,END=4.08;
  /* designer's box on its leg: foot on top of the pipe, lid towards the viewer, glands along the pipe */
- function PL(x){return function(p){return[x+p[0]*KS,YF+p[1]*KS,p[2]*KS]}}
+ function PL(x){return function(p){return[x+p[0]*KS,YF+p[1]*KS,(p[2]+5)*KS]}}
  var PPL=PL(BOXX),TPL=PL(TBX),GL=PPL(KP(-114,20,38)),TGL=TPL(KP(-114,20,38));
  kbox(S,'pbox',PPL,function(n){return n});kbox(S,'tbox',TPL,function(n){return n});
- /* each leg is pulled to the pipe by two PFS clamps; the unused gland of each box is plugged */
- [[BOXX,'pbox',PPL],[TBX,'tbox',TPL]].forEach(function(b){var g=pfs(Y,b[0]-0.12,RC+0.026,1.0);merge(g,pfs(Y,b[0]+0.12,RC+0.026,1.0));S.add(b[1],g,MAT.chrome,{group:'heat'});
-  var e=b[2](KP(89,20,38)),pl=yToX(cyl(G(),0.03,0,0.02,16,0,Math.PI*2,true,true));moveG(pl,e[0],e[1],e[2]);S.add(b[1],pl,MAT.kbody,{group:'heat'})});
- /* heating cable: leaves the box through its leg under the insulation, makes one loop round the pipe within 300±50 mm,
-    then one run 45° below the horizontal; loops at supports, reverse spiral on the valve, end seal at the end of the section */
- var q=[onPipe(BOXX,0)],N=36,TT=Math.PI*2+A1;for(k=1;k<=N;k++)q.push(onPipe(BOXX+0.62*k/N,TT*k/N));
+ /* the unused gland of each box is plugged */
+ [[BOXX,'pbox',PPL],[TBX,'tbox',TPL]].forEach(function(b){var e=b[2](KP(89,20,38)),pl=yToX(cyl(G(),0.03,0,0.02,16,0,Math.PI*2,true,true));moveG(pl,e[0],e[1],e[2]);S.add(b[1],pl,MAT.kbody,{group:'heat'})});
+ /* heating cable: one run 45° below the horizontal; loops at supports, reverse spiral on the valve, end seal at the end of the section */
+ /* out of the leg along the top of the pipe through the channel under the foot, about 300 mm along the top,
+    a U-turn over the front (the service loop), then back past the box under both of its clamps */
+ var XS=BOXX-0.5,UR=RC*A1/2,q=[onPipe(BOXX+0.02,0),onPipe(BOXX-0.17,0),onPipe(XS,0)];
+ for(k=1;k<=24;k++){var tt=Math.PI*k/24;q.push(onPipe(XS-UR*Math.sin(tt),(UR-UR*Math.cos(tt))/RC))}q.push(onPipe(XS+0.2,A1));
  var CL=0.03,RF=PR+0.11+rc+0.03;
  function prof(th){var dy=Math.cos(th),dz=Math.sin(th),ty=dy>1e-6?0.43/dy:dy<-1e-6?0.07/(-dy):1e9,tz=Math.abs(dz)>1e-6?0.18/Math.abs(dz):1e9;return Math.max(PR+0.03,Math.min(ty,tz))+CL}
  q=q.concat(supportLoop(Y,SUP[0],0.38,A1,RC),supportLoop(Y,SUP[1],0.38,A1,RC));
@@ -1740,16 +1767,27 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,PR=0.22,X0=-4.4,X1=4.4,VX=1.55,SU
  var path=relax2(q,0.02);
  var cable=S.add('cable',tube(G(),path,rc,8),MAT.cable,{group:'heat',prog:0});
  /* FT/HTM fastening tape: rings every <=300 mm and patches on the valve and flanges */
- var ft=G();[-3.6,-2.95,-2.3,-1.65,-0.45,0.2,0.85,2.15,2.8,3.45].forEach(function(x){merge(ft,band(Y,x,RC+0.024,0.045))});
+ /* section helpers for bands round the pipe (u = z, v = y above the axis) */
+ function fr(x){return{O:[x,Y,0],U:[0,0,1],V:[0,1,0],X:[1,0,0]}}function uv(p){return[p[2],p[1]-Y]}
+ var SX=TBX+0.4,SA=A1-Math.PI/3,cap=relax2([vp(TBX+0.02,0,PR+0.01),vp(TBX+0.17,0,PR+0.01),vp(TBX+0.25,0,PR+0.01),vp(SX-0.15,SA*0.5,PR+0.01),vp(SX-0.1,SA,PR+0.026),vp(SX-0.07,SA,PR+0.026)],0.012);
+ var lay=[{pts:path,r:rc},{pts:cap,r:0.009}];
+ function secAt(x,hw){var P=circ2([],[0,0],PR+0.001,120);return onSec(lay,function(p){return Math.abs(p[0]-x)<hw},uv,P)}
+ /* PFS clamps of each box: seated on the foot wings (between the leg and the end lip), over the cable under them */
+ [[BOXX,'pbox',PPL],[TBX,'tbox',TPL]].forEach(function(b){var g=G();[-50,50].forEach(function(xm){var x=b[0]+xm*KS,P=secAt(x,0.03);
+  [[-29,0],[-29,18],[-28.3,20.5],[-26.5,22.3],[-24,23],[14,23],[16.5,22.3],[18.3,20.5],[19,18],[19,0]].forEach(function(q){P.push(uv(b[2]([xm,q[1],q[0]])))});
+  merge(g,pfsBand(fr(x),P,[Math.sin(1.0),Math.cos(1.0)]))});S.add(b[1]=='pbox'?'pfs':'tpfs',g,MAT.chrome,{group:'heat'})});
+ /* FT/HTM fastening tape: rings every <=300 mm hugging the pipe, plus patches on the valve and flanges */
+ var ft=G();[-3.85,-2.75,-2.25,-1.75,-0.35,0.35,0.85,2.25,2.75,3.25,3.75].forEach(function(x){merge(ft,hullBand(fr(x),secAt(x,0.03),0.045,0.003))});
  V.tapes.forEach(function(t){tapeAt(ft,t[0],t[1],t[2],0.05,0.1,rc+0.004)});
  S.add('tape',ft,MAT.ftape,{group:'heat'});
  /* end seal */
  var es=yToX(cyl(G(),0.035,-0.1,0.08,16,0,Math.PI*2,true,true));moveG(es,END,onPipe(END,A1)[1],onPipe(END,A1)[2]);S.add('endseal',es,MAT.gland,{group:'heat'});
  /* pipe temperature sensor: 60° above the cable, under an FT/HTM ring, covered with aluminium tape; lead runs from the box leg */
- var SX=TBX+0.32,SA=A1-Math.PI/3,sp2=vp(SX,SA,PR+0.026);var sg=yToX(cyl(G(),0.026,-0.07,0.07,14,0,Math.PI*2,true,true));moveG(sg,SX,sp2[1],sp2[2]);S.add('sensor',sg,MAT.sensor,{group:'heat'});
- var cap=relax2([onPipe(TBX,0),vp(TBX+0.1,0.12,PR+0.01),vp(SX-0.2,SA*0.9,PR+0.01),vp(SX-0.07,SA,PR+0.026)],0.012);S.add('sensor',tube(G(),cap,0.008,6),MAT.steel,{group:'heat',prog:0});
- S.add('sensor',hArc(Y,RC+0.042,SX-0.085,SX+0.085,SA-0.22,A1+0.2,16),MAT.tape,{group:'heat',alpha:0.55,blend:true});
- S.add('sensor',band(Y,SX,RC+0.034,0.04),MAT.ftape,{group:'heat'});
+ var sp2=vp(SX,SA,PR+0.026);var sg=yToX(cyl(G(),0.026,-0.07,0.07,14,0,Math.PI*2,true,true));moveG(sg,SX,sp2[1],sp2[2]);S.add('sensor',sg,MAT.sensor,{group:'heat'});
+ S.add('sensor',tube(G(),cap,0.008,6),MAT.steel,{group:'heat',prog:0});
+ /* sensor held by an FT/HTM ring, then aluminium tape wrapped right round over the sensor and the cable (section B-B) */
+ var sP=circ2(secAt(SX,0.03),uv(sp2),0.027,12);S.add('sensor',hullBand(fr(SX),sP,0.04,0.003),MAT.ftape,{group:'heat'});
+ S.add('sensor',hullBand(fr(SX),circ2(secAt(SX,0.1),uv(sp2),0.027,12),0.2,0.006),MAT.tape,{group:'heat',alpha:0.6,blend:true});
  /* control cabinet: power cable and control cable, each in a metal hose */
  var CX=-5.3,CZ=1.9,CB=cabinet(S,CX,CZ,1),HR=0.034,gA=CB.gA,gB=CB.gB;
  var pc=smooth([gA,[gA[0]+0.12,gA[1],gA[2]],[gA[0]+0.14,HR,gA[2]],[GL[0]-0.3,HR,gA[2]],[GL[0]-0.3,HR,0.46],[GL[0]-0.3,GL[1],0.46],[GL[0]-0.3,GL[1],GL[2]],GL],0.13,12);
@@ -1812,7 +1850,7 @@ function buildTank(R,data){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,DEG
  function uturn(a,y0,y1,dir){var rr=Math.abs(y1-y0)/2,yc=(y0+y1)/2,ub=rr/RC/DEG;for(var k=1;k<=14;k++){var t=k/14*Math.PI;q.push(TP(a+dir*ub*Math.sin(t),yc+(y0-yc)*Math.cos(t)))}}
  /* boxes on the shell: leg radial, glands pointing down, legs held by PFS clamps that go round the tank */
  var BY=4.45,AP=77,AT=27;
- function TBP(aDeg,y){var a=aDeg*DEG,c=Math.cos(a),s=Math.sin(a);return{p:function(p){return[RS*c+c*p[1]*KS-s*p[2]*KS,y-p[0]*KS,RS*s+s*p[1]*KS+c*p[2]*KS]},n:function(n){return[c*n[1]-s*n[2],-n[0],s*n[1]+c*n[2]]},t:[-s,0,c],r:[c,0,s]}}
+ function TBP(aDeg,y){var a=aDeg*DEG,c=Math.cos(a),s=Math.sin(a),R0=RS-0.0015;return{p:function(p){var z=(p[2]+5)*KS;return[R0*c+c*p[1]*KS-s*z,y-p[0]*KS,R0*s+s*p[1]*KS+c*z]},n:function(n){return[c*n[1]-s*n[2],-n[0],s*n[1]+c*n[2]]},t:[-s,0,c],r:[c,0,s]}}
  var PB=TBP(AP,BY),TB=TBP(AT,BY);kbox(S,'pbox',PB.p,PB.n);kbox(S,'tbox',TB.p,TB.n);
  var GRp=PB.p(KP(89,20,38)),GRt=TB.p(KP(89,20,38));
  [[PB,'pbox'],[TB,'tbox']].forEach(function(b){var e=b[0].p(KP(-114,20,38)),pl=cyl(G(),0.03,0,0.02,16,0,Math.PI*2,true,true);moveG(pl,e[0],e[1],e[2]);S.add(b[1],pl,MAT.kbody,{group:'heat'})});
@@ -1841,13 +1879,11 @@ function buildTank(R,data){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,DEG
  var cable=S.add('cable',tube(G(),path,rc,8),MAT.cable,{group:'heat',prog:0});
  var es=yToX(cyl(G(),0.042,-0.1,0.08,16,0,Math.PI*2,true,true));moveG(es,END,ycn,zc);S.add('endseal',es,MAT.gland,{group:'heat'});
  /* perforated mounting strips (kept clear of the legs, the ladder brackets and the nozzle) held by clamp bands */
- var STR=[[0,1.0],[45,1.78],[90,0.8],[135,1.78],[180,0.84],[225,1.78],[270,0.8],[315,1.78]],SY1=BY+0.12,stp=G();
+ var STR=[[0,1.0],[45,1.78],[90,0.8],[135,1.78],[180,0.84],[225,1.78],[270,0.8],[315,1.78]],SY1=yT[0]+0.14,stp=G();
  STR.forEach(function(s){var A=s[0]*DEG,c=Math.cos(A),sn=Math.sin(A),Rr=RS+0.006,t=[-sn,0,c],nn=[c,0,sn],b0=stp.p.length/3,hw=0.022;
   [[-1,s[1]],[1,s[1]],[1,SY1],[-1,SY1]].forEach(function(qq,i){pushV(stp,[c*Rr+t[0]*qq[0]*hw,qq[1],sn*Rr+t[2]*qq[0]*hw],nn,[i==1||i==2?1:0,i>1?1:0])});stp.i.push(b0,b0+1,b0+2,b0,b0+2,b0+3)});
  S.add('strip',stp,MAT.steel,{group:'heat'});
- var bd=G();[BY-0.12,BY+0.12,1.81].forEach(function(y){merge(bd,cyl(G(),RS+0.05,y-0.0175,y+0.0175,96,0,Math.PI*2));
-  var lk=box(G(),0.03,0.03,0.06,0,0,0),A=110*DEG,c=Math.cos(A),s=Math.sin(A);xf(lk,function(p){var rr=RS+0.065+p[2];return[c*rr-s*p[0],y+p[1],s*rr+c*p[0]]},function(n){return[c*n[2]-s*n[0],n[1],s*n[2]+c*n[0]]});merge(bd,lk)});
- S.add('strip',bd,MAT.chrome,{group:'heat'});
+
  /* the strip tongues bent over the cable at every crossing; FT/HTM patches on the valve */
  var tb=G();runs.forEach(function(r){var lo=Math.min(r[0],r[1]),hi=Math.max(r[0],r[1]);STR.forEach(function(s){for(var m=-2;m<=1;m++){var a=s[0]+360*m;if(a>lo+1&&a<hi-1&&r[2]>=s[1]-0.01&&r[2]<=SY1){var A=a*DEG,c=Math.cos(A),sn=Math.sin(A);tapeAt(tb,TP(a,r[2]),[-sn,0,c],[c,0,sn],0.05,0.09,rc+0.004)}}})});
  S.add('tape',tb,MAT.steel,{group:'heat'});
@@ -1859,6 +1895,15 @@ function buildTank(R,data){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,DEG
  S.add('sensor',sg,MAT.sensor,{group:'heat'});
  var sl=0.085/(RS+0.03)/DEG,tcap=relax2([TP(AT,BY-0.02,RS+0.01),TP(AT,BY-0.22,RS+0.012),TP(AT+2,SYs+0.16,RS+0.012),TP(SAg-sl,SYs,RS+0.03)],0.012);
  S.add('sensor',tube(G(),tcap,0.01,6),MAT.steel,{group:'heat',prog:0});
+ /* bands round the tank (u = x, v = z): they hug the shell and ride over the strips, the cable and the leads under them */
+ function frT(y){return{O:[0,y,0],U:[1,0,0],V:[0,0,1],X:[0,1,0]}}function uvT(p){return[p[0],p[2]]}
+ var layT=[{pts:path,r:rc},{pts:tcap,r:0.011}];function secT(y,hw){var P=circ2([],[0,0],RS+0.008,360);return onSec(layT,function(p){return Math.abs(p[1]-y)<hw},uvT,P)}
+ /* PFS clamps of the boxes: two bands round the tank, each seated on the foot wings of both boxes */
+ var pf=G();[-50,50].forEach(function(xm){var y=BY-xm*KS,P=secT(y,0.03);[PB,TB].forEach(function(b){
+  [[-29,0],[-29,18],[-28.3,20.5],[-26.5,22.3],[-24,23],[14,23],[16.5,22.3],[18.3,20.5],[19,18],[19,0]].forEach(function(q){P.push(uvT(b.p([xm,q[1],q[0]])))})});
+  merge(pf,pfsBand(frT(y),P,[Math.cos(104*DEG),Math.sin(104*DEG)]))});S.add('tpfs',pf,MAT.chrome,{group:'heat'});
+ /* bands that hold the mounting strips at their top and above the lower belt */
+ var bd=G();[SY1-0.03,1.81].forEach(function(y){merge(bd,pfsBand(frT(y),secT(y,0.03),[Math.cos(110*DEG),Math.sin(110*DEG)]))});S.add('tape',bd,MAT.chrome,{group:'heat'});
  S.add('sensor',cyl(G(),RS+0.066,SYs-0.08,SYs+0.08,12,-(SAg+8)*DEG,-(SAg-8)*DEG),MAT.tape,{group:'heat',alpha:0.55,blend:true});
  /* cabinet: power cable to the power box, control cable to the thermostat, both in metal hoses up from below */
  var CX=3.0,CZ=2.6,CB=cabinet(S,CX,CZ,-1),HR=0.036,gA=CB.gA,gB=CB.gB;
@@ -1941,7 +1986,7 @@ Viewer.prototype.toggleHeat=function(){var self=this,S=this.cur;this.anims=this.
  /* fastening tape / strip tongues once the cable is laid */
  at(5000+D,function(){S.list.forEach(function(o){if(o.key=='tape'){o.visible=true;o.s=0;o.__heat=1;self.tw('s',1,500,o,null,Math.random()*400,easeOutBack);}})});
  /* 3. end seal where the section ends; the control cable comes from the cabinet, then the thermostat and its sensor */
- pop('endseal',5100+D);pop('ccable',5250+D,900);pop('tbox',6050+D);pop('sensor',6300+D,700);at(6050+D,function(){self.labStep=Math.max(self.labStep,3)});
+ pop('pfs',5000+D);pop('tpfs',7000+D);pop('endseal',5100+D);pop('ccable',5250+D,900);pop('tbox',6050+D);pop('sensor',6300+D,700);at(6050+D,function(){self.labStep=Math.max(self.labStep,3)});
  /* 4. insulation, cladding, jacket */
  at(7100+D,function(){S.list.forEach(function(o){if(o.group=='ins'){var a=o.key.indexOf('ins')==0?S.layers.ins:o.key=='jacket'?S.layers.jacket:S.layers.clad;self.tw('alpha',a,900,o)}});self.labStep=Math.max(self.labStep,4)});
  /* 5. power on */
