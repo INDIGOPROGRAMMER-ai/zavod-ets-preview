@@ -1174,16 +1174,16 @@ a.dtab:hover{color:var(--ink)}a.dtab[aria-current="page"]:hover{color:#fff;backg
 .dp-more-row a:hover{text-decoration:underline}
 .req2 .logo-anim{margin-top:34px;max-width:200px}
 @media (max-width:900px){.dp-d2{grid-template-columns:1fr}.dp-d2 a{height:auto;grid-template-columns:1fr}.dp-d2 figure{aspect-ratio:16/8}}
-.m3-sec{background:var(--navy2);color:#fff;padding-top:clamp(32px,3vw,48px)}
+.m3-sec{background:var(--navy2);color:#fff;padding-top:clamp(32px,3vw,48px);padding-bottom:clamp(32px,3vw,48px)}
 .m3-hint.hide{opacity:0}.m3-hint{transition:opacity .5s,background-color .3s,color .3s}
 .m3-sec .dp-h2{color:#fff}.m3-sec .dp-p{color:rgba(255,255,255,.82);max-width:62ch}
 .m3-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px 40px;margin-bottom:22px}
 .m3-head .dp-h2{margin-bottom:10px}
-@media (max-height:1000px) and (min-width:901px){.m3-sec{padding-top:22px}.m3-head{margin-bottom:14px}.m3-head .dp-h2{font-size:28px;margin-bottom:6px}.m3-head .dp-p{font-size:15.5px;max-width:80ch}.m3-tabs button{padding:9px 18px}.m3{height:calc(100vh - var(--hdr) - 220px);height:calc(100svh - var(--hdr) - 220px);min-height:300px;max-height:640px}}
+@media (max-height:1000px) and (min-width:901px){.m3-sec{padding-top:22px}.m3-head{margin-bottom:14px}.m3-head .dp-h2{font-size:28px;margin-bottom:6px}.m3-head .dp-p{font-size:15.5px;max-width:80ch}.m3-tabs button{padding:9px 18px}.m3{height:clamp(440px,calc(100vh - var(--hdr) - 96px),760px);height:clamp(440px,calc(100svh - var(--hdr) - 96px),760px)}}
 .m3-tabs{display:inline-flex;padding:5px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18)}
 .m3-tabs button{border:0;background:transparent;color:rgba(255,255,255,.82);font:800 15px var(--sans);padding:11px 22px;border-radius:999px;cursor:pointer;transition:background-color .2s,color .2s}
 .m3-tabs button:hover{color:#fff}.m3-tabs button[aria-selected="true"]{background:#fff;color:var(--navy)}
-.m3{position:relative;height:clamp(320px,calc(100vh - var(--hdr) - 330px),640px);height:clamp(320px,calc(100svh - var(--hdr) - 330px),640px);border-radius:var(--r);overflow:hidden;background:radial-gradient(120% 90% at 50% 25%,#fff 0%,#eef2f6 55%,#dbe3ea 100%);box-shadow:0 30px 70px rgba(0,0,0,.35)}
+.m3{position:relative;height:clamp(440px,calc(100vh - var(--hdr) - 96px),760px);height:clamp(440px,calc(100svh - var(--hdr) - 96px),760px);border-radius:var(--r);overflow:hidden;background:radial-gradient(120% 90% at 50% 25%,#fff 0%,#eef2f6 55%,#dbe3ea 100%);box-shadow:0 30px 70px rgba(0,0,0,.35)}
 .m3 canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block;touch-action:pan-y;cursor:grab}.m3 canvas:active{cursor:grabbing}
 .m3-labels{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;overflow:hidden}
 .m3-lab{position:absolute;left:0;top:0;opacity:0;transition:opacity .35s;--dy:0px}
@@ -1375,7 +1375,7 @@ a.dtab:hover{color:var(--ink)}a.dtab[aria-current="page"]:hover{color:#fff;backg
  .m3-sec{padding-top:30px}
  .m3-head{margin-bottom:14px;gap:12px}
  .m3-tabs button{padding:9px 16px;font-size:14px}
- .m3{height:420px}
+ .m3{height:clamp(440px,calc(100vh - 190px),560px);height:clamp(440px,calc(100svh - 190px),560px)}
  /* objects page */
  .dp-sec .ob-g{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 10px}
  .ob-i button{border-radius:12px}
@@ -1730,7 +1730,7 @@ function supportLoop(Y,xs,h,A,RC){function vp(x,th){return[x,Y+RC*Math.cos(th),R
 
 /* --- pipeline --- */
 function buildPipe(R){var S=new Scene(R),Y=1.3,PR=0.22,X0=-4.4,X1=4.4,VX=1.55,SUP=[-2.5,0.1,3.1];
- S.cam={target:[-0.7,1.15,0.4],dist:11.8,yaw:-0.62,pitch:0.3,min:5,max:20};
+ S.cam={target:[-0.7,1.15,0.4],dist:11.8,yaw:-0.62,pitch:0.3,min:5,max:20,shift:1};
  S.ground(7.5,0,0,5.2);
  /* pipe sections + flanges */
  function hpipe(x0,x1,r,y,z,key,mat,opt){var g=yToX(cyl(G(),r,x0,x1,40,0,Math.PI*2,true,true));moveG(g,0,y,z||0);return S.add(key,g,mat,opt)}
@@ -1826,7 +1826,7 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,PR=0.22,X0=-4.4,X1=4.4,VX=1.55,SU
 
 /* --- vertical tank on legs --- */
 function buildTank(R,data){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,DEG=Math.PI/180,k;
- S.cam={target:[0.9,3.1,0.5],dist:16.5,yaw:-0.5,pitch:0.18,min:8,max:28};
+ S.cam={target:[0.9,3.55,0.5],dist:17.6,yaw:-0.5,pitch:0.18,min:8,max:28};
  S.ground(8,0.8,0,4.6);
  function dec(b,T){var s=atob(b),a=new Uint8Array(s.length);for(var k=0;k<s.length;k++)a[k]=s.charCodeAt(k);return new T(a.buffer)}
  /* the stock outlet stub and its valve are replaced by a proper flanged outlet below */
@@ -2023,7 +2023,7 @@ Viewer.prototype.layoutLabels=function(Ls,W,H){var G=14,M=4,self=this;this._lf=(
   var ord=[];if(l.ci!==undefined)ord.push(l.ci);for(k=0;k<C.length;k++)if(k!==l.ci)ord.push(k);
   function rect(i){var cx=Math.min(Math.max(C[i][0],M),W-w-M),cy=Math.min(Math.max(C[i][1],M),H-h-M);return[cx,cy,cx+w,cy+h]}
   var best=null,bi=ord[0];for(k=0;k<ord.length;k++){var r=rect(ord[k]);if(!hit(r,l)){best=r;bi=ord[k];break}}
-  if(!best){var bd2=1e18;for(var gy=M;gy<=H-h-M;gy+=8)for(var gx=M;gx<=W-w-M;gx+=16){var r=[gx,gy,gx+w,gy+h];if(hit(r,l))continue;var ex=Math.max(r[0]-x,0,x-r[2]),ey=Math.max(r[1]-y,0,y-r[3]),dd=ex*ex+ey*ey;if(dd<bd2){bd2=dd;best=r}}if(best)bi=0}
+  if(!best){var bd2=1e18;for(var gy=M;gy<=H-h-M;gy+=4)for(var gx=M;gx<=W-w-M;gx+=6){var r=[gx,gy,gx+w,gy+h];if(hit(r,l))continue;var ex=Math.max(r[0]-x,0,x-r[2]),ey=Math.max(r[1]-y,0,y-r[3]),dd=ex*ex+ey*ey;if(dd<bd2){bd2=dd;best=r}}if(best)bi=0}
   if(!best){var ba=1e18;for(k=0;k<C.length;k++){var r=rect(k),ar=0;placed.forEach(function(q){var ox=Math.min(r[2],q[2])-Math.max(r[0],q[0]),oy=Math.min(r[3],q[3])-Math.max(r[1],q[1]);if(ox>0&&oy>0)ar+=ox*oy});if(ar<ba){ba=ar;best=r;bi=k}}}
   l.ci=bi;placed.push(best);
   sp.style.left=(best[0]-x).toFixed(1)+'px';sp.style.top=(best[1]-y).toFixed(1)+'px';sp.style.right='auto';
@@ -2040,8 +2040,8 @@ Viewer.prototype.loop=function(now){requestAnimationFrame(this.loop);
  /* camera */
  if(!this.auto&&now-this.lastUser>6000)this.auto=true;
  if(this.auto)this.yaw+=0.0016;else{this.vy*=0.92;}
- var asp=this.cv.width/this.cv.height,D=this.dist*(asp<1.3?Math.pow(1.3/asp,0.9):1);var cp=Math.cos(this.pitch),eye=[this.target[0]+Math.sin(this.yaw)*cp*D,this.target[1]+Math.sin(this.pitch)*D,this.target[2]+Math.cos(this.yaw)*cp*D];
- var P=M4.persp(0.62,asp,0.1,200),V=M4.look(eye,this.target,[0,1,0]),VP=M4.mul(P,V);
+ var asp=this.cv.width/this.cv.height,D=this.dist*(asp<1.3?1.3/asp:1);var cp=Math.cos(this.pitch),eye=[this.target[0]+Math.sin(this.yaw)*cp*D,this.target[1]+Math.sin(this.pitch)*D,this.target[2]+Math.cos(this.yaw)*cp*D];
+ var P=M4.persp(0.62,asp,0.1,200);/* lens shift: lift the picture a little so the buttons along the bottom never cover the model */P[9]=-(this.cur.cam.shift||0)*Math.min(0.12,60/Math.max(1,this.cv.clientHeight));var V=M4.look(eye,this.target,[0,1,0]),VP=M4.mul(P,V);
  /* per-object model matrices (pop-in scales around the object's own centre) */
  S.list.forEach(function(o){if(o.s!==undefined&&o.s<0.999){var s=Math.max(0.0001,o.s),c=o._c;o.m=M4.trs([c[0]*(1-s)+o.pos[0],c[1]*(1-s)+o.pos[1],c[2]*(1-s)+o.pos[2]],o.rot,[s,s,s])}else o.m=null});
  this.R.draw(S.list,VP,eye,(now-this.t0)/1000);
