@@ -1790,35 +1790,38 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,PR=0.22,X0=-4.4,X1=4.4,VX=1.55,SU
  S.add('sensor',hullBand(fr(SX),circ2(secAt(SX,0.1),uv(sp2),0.027,12),0.2,0.006),MAT.tape,{group:'heat',alpha:0.6,blend:true});
  /* control cabinet: power cable and control cable, each in a metal hose */
  var CX=-5.3,CZ=1.9,CB=cabinet(S,CX,CZ,1),HR=0.034,gA=CB.gA,gB=CB.gB;
- var pc=smooth([gA,[gA[0]+0.12,gA[1],gA[2]],[gA[0]+0.14,HR,gA[2]],[GL[0]-0.3,HR,gA[2]],[GL[0]-0.3,HR,0.46],[GL[0]-0.3,GL[1],0.46],[GL[0]-0.3,GL[1],GL[2]],GL],0.13,12);
+ var pc=smooth([gA,[gA[0]+0.12,gA[1],gA[2]],[gA[0]+0.14,HR,gA[2]],[GL[0]-0.3,HR,gA[2]],[GL[0]-0.3,HR,0.54],[GL[0]-0.3,GL[1],0.54],[GL[0]-0.3,GL[1],GL[2]],GL],0.13,12);
  S.add('pcable',corr(G(),pc,HR,0.03),MAT.hose,{group:'heat',prog:0});
  var cc=smooth([gB,[gB[0]+0.12,gB[1],gB[2]],[gB[0]+0.14,0.028,gB[2]],[TGL[0]-0.3,0.028,gB[2]],[TGL[0]-0.3,0.028,0.62],[TGL[0]-0.3,TGL[1],0.62],[TGL[0]-0.3,TGL[1],TGL[2]],TGL],0.13,12);
  S.add('ccable',corr(G(),cc,0.027,0.026),MAT.hose,{group:'heat',prog:0});
  /* removable thermal jacket on the valve */
- var JR=0.52,JX=0.5,jk=yToX(cyl(G(),JR,VX-JX,VX+JX,48,0,Math.PI*2));
- [[VX-JX,-1],[VX+JX,1]].forEach(function(e){var b=jk.p.length/3;for(var k=0;k<=48;k++){var a=k/48*Math.PI*2,ca=Math.cos(a),sa=Math.sin(a);pushV(jk,[e[0],ca*(PR+0.15),sa*(PR+0.15)],[e[1],0,0],[k/48,0]);pushV(jk,[e[0],ca*JR,sa*JR],[e[1],0,0],[k/48,1])}
+ var JR=0.57,JX=0.5,jk=yToX(cyl(G(),JR,VX-JX,VX+JX,48,0,Math.PI*2));
+ [[VX-JX,-1],[VX+JX,1]].forEach(function(e){var b=jk.p.length/3;for(var k=0;k<=48;k++){var a=k/48*Math.PI*2,ca=Math.cos(a),sa=Math.sin(a);pushV(jk,[e[0],ca*(PR+0.226),sa*(PR+0.226)],[e[1],0,0],[k/48,0]);pushV(jk,[e[0],ca*JR,sa*JR],[e[1],0,0],[k/48,1])}
   for(k=0;k<48;k++){var i=b+k*2;jk.i.push(i,i+2,i+1,i+1,i+2,i+3)}});
  moveG(jk,0,Y,0);S.add('jacket',jk,MAT.jacket,{group:'ins',alpha:0,blend:true,twoPass:true,center:[VX,Y,0]});
  /* insulation and cladding: two halves each, so they can be pulled apart */
  function shell(key,r,mat,top){[[X0+0.08,VX-0.42],[VX+0.42,X1-0.08]].forEach(function(s){var g=yToX(cyl(G(),r,s[0],s[1],48,top?0:Math.PI,top?Math.PI:Math.PI*2));
    for(var k=0;k<g.p.length;k+=3){var y=g.p[k+1],z=g.p[k+2];g.p[k+1]=-z;g.p[k+2]=y;var ny=g.n[k+1],nz=g.n[k+2];g.n[k+1]=-nz;g.n[k+2]=ny}
    moveG(g,0,Y,0);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[(s[0]+s[1])/2,Y+(top?.2:-.2),0]})})}
- shell('insT',PR+0.13,MAT.insul,true);shell('insB',PR+0.13,MAT.insul,false);shell('cladT',PR+0.145,MAT.clad,true);shell('cladB',PR+0.145,MAT.clad,false);
+ var TI=0.208;/* 80 mm insulation: the box leg goes through it, only the neck under the box stays out */
+ shell('insT',PR+TI,MAT.insul,true);shell('insB',PR+TI,MAT.insul,false);shell('cladT',PR+TI+0.015,MAT.clad,true);shell('cladB',PR+TI+0.015,MAT.clad,false);
  /* supports are insulated too: the shoe sits in an insulated box, the joint with the support is sealed */
- SUP.forEach(function(x){var i=G();box(i,0.62,0.26,0.42,x,Y-0.33,0);S.add('insB',i,MAT.insul,{group:'ins',alpha:0,blend:true,twoPass:true,center:[x,Y-0.33,0]});
-  var c=G();box(c,0.65,0.29,0.45,x,Y-0.335,0);box(c,0.2,0.014,0.2,x,Y-0.484,0);S.add('cladB',c,MAT.clad,{group:'ins',alpha:0,blend:true,twoPass:true,center:[x,Y-0.34,0]})});
+ SUP.forEach(function(x){var i=G();box(i,0.66,0.3,0.5,x,Y-0.36,0);S.add('insB',i,MAT.insul,{group:'ins',alpha:0,blend:true,twoPass:true,center:[x,Y-0.36,0]});
+  var c=G();box(c,0.69,0.32,0.53,x,Y-0.365,0);box(c,0.2,0.014,0.2,x,Y-0.529,0);S.add('cladB',c,MAT.clad,{group:'ins',alpha:0,blend:true,twoPass:true,center:[x,Y-0.34,0]})});
  S.layers={ins:0.42,clad:0.24,jacket:0.5};
  S.explode=function(o,e){if(o.key=='cladT')o.pos=[0,1.05*e,0];else if(o.key=='cladB')o.pos=[0,-0.62*e,0];else if(o.key=='insT')o.pos=[0,0.55*e,0];else if(o.key=='insB')o.pos=[0,-0.35*e,0];else if(o.key=='jacket')o.pos=[0,0.9*e,0]};
  S.labels=[
   {k:'cable',t:'Греющий кабель',p:onPipe(-3.15,A1),n:[0,-.3,.9],step:2,dy:44,side:'l'},
   {k:'pbox',t:'Коробка подключения ЭТС МК',p:PPL(KP(0,64,45)),n:[0,1,.3],step:2,side:'l'},
-  {k:'tbox',t:'Термостат',p:TPL(KP(0,64,45)),n:[0,1,.3],step:3},
+  {k:'tbox',t:'Коробка контрольная ЭТС МК',p:TPL(KP(0,64,45)),n:[0,1,.3],step:3},
+  {k:'pcable',t:'Силовой кабель',p:[GL[0]-0.3,0.95,0.54],n:[0,0,1],step:1},
+  {k:'ccable',t:'Контрольный кабель',p:[TGL[0]-0.3,0.85,0.62],n:[0,0,1],step:3},
   {k:'sensor',t:'Датчик температуры',p:vp(SX,SA,RC+0.04),n:[0,.4,.9],step:3,side:'l',dy:40},
   {k:'endseal',t:'Концевая заделка',p:onPipe(END+0.04,A1),n:[0,-.4,.9],step:3,dy:40},
   {k:'cab',t:'Шкаф управления ЭТС ШУО',p:[CX,CB.top+0.04,CZ],n:[0,.3,1],step:1,side:'l'},
   {k:'jacket',t:'Термочехол на задвижке',p:[VX,Y+0.38,0.38],n:[0,.7,.7],step:4},
-  {k:'insT',t:'Теплоизоляция',p:[2.7,Y+PR+0.13,0.18],n:[0,1,.5],step:4,ex:true,side:'l'},
-  {k:'cladT',t:'Защитный кожух',p:[3.5,Y+PR+0.145,0.18],n:[0,1,.5],step:4,ex:true}];
+  {k:'insT',t:'Теплоизоляция',p:[2.7,Y+PR+TI,0.18],n:[0,1,.5],step:4,ex:true,side:'l'},
+  {k:'cladT',t:'Защитный кожух',p:[3.5,Y+PR+TI+0.015,0.18],n:[0,1,.5],step:4,ex:true}];
  S.cableLen=cable.buf.len;S.cableDur=2600;S.heatTarget='Трубопровод';return S}
 
 /* --- vertical tank on legs --- */
@@ -1829,6 +1832,7 @@ function buildTank(R,data){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,DEG
  /* the stock outlet stub and its valve are replaced by a proper flanged outlet below */
  Object.keys(data).forEach(function(m){if(m.indexOf('Outlet')>=0)return;var d=data[m];var g={p:dec(d.p,Float32Array),n:dec(d.n,Float32Array),u:dec(d.u,Float32Array),i:dec(d.i,Uint16Array)};
   if(m.indexOf('Valve')>=0){var I=[],P=g.p;for(var k=0;k<g.i.length;k+=3){var a=g.i[k],b=g.i[k+1],c=g.i[k+2];if(P[a*3+1]>2&&P[b*3+1]>2&&P[c*3+1]>2)I.push(a,b,c)}g.i=new Uint16Array(I)}
+  if(m.indexOf('Ladder')>=0){var P=g.p;for(var k=0;k<P.length;k+=3){var r=Math.hypot(P[k],P[k+2]);if(r>1.04){var f=(1.04+(r-1.04)*2)/r;P[k]*=f;P[k+2]*=f}}}
   var mat=m.indexOf('Tank')>=0?{color:[1,1,1],metal:.75,rough:.35}:m.indexOf('Valve')>=0?{color:[1,1,1],metal:.4,rough:.4}:{color:[1,1,1],metal:.6,rough:.45};
   S.add('tank',g,mat,{tex:R.texture(d.tex)})});
  /* outlet: nozzle, flanged gate valve, pipe on a support */
@@ -1913,7 +1917,7 @@ function buildTank(R,data){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,DEG
  S.add('ccable',corr(G(),cc,0.029,0.028),MAT.hose,{group:'heat',prog:0});
  /* insulation + cladding (two halves that slide apart), valve jacket, pipe insulation, insulated pipe support */
  function vshell(key,r,mat,first){[first,-first].forEach(function(sd){var a0=sd>0?-Math.PI/2:Math.PI/2,g=cyl(G(),r,Y0,Y1,40,a0,a0+Math.PI);var o=S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[sd*0.6,4,0]});o.sd=sd})}
- vshell('insT',RS+0.11,MAT.insul,-1);vshell('cladT',RS+0.135,MAT.clad,1);
+ vshell('insT',RS+0.208,MAT.insul,-1);vshell('cladT',RS+0.223,MAT.clad,1);
  var J0=1.12,J1=VXo+0.31,JR=0.3,jk=yToX(cyl(G(),JR,J0,J1,40,0,Math.PI*2));
  [[J0,-1],[J1,1]].forEach(function(e){var b=jk.p.length/3;for(var k=0;k<=40;k++){var a=k/40*Math.PI*2,ca=Math.cos(a),sa=Math.sin(a);pushV(jk,[e[0],ca*(PR+0.075),sa*(PR+0.075)],[e[1],0,0],[k/40,0]);pushV(jk,[e[0],ca*JR,sa*JR],[e[1],0,0],[k/40,1])}
   for(k=0;k<40;k++){var i=b+k*2;jk.i.push(i,i+2,i+1,i+1,i+2,i+3)}});
@@ -1928,13 +1932,15 @@ function buildTank(R,data){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,DEG
  S.labels=[
   {k:'cable',t:'Греющий кабель',p:TP(125,yT[5]),n:[Math.cos(125*DEG),0,Math.sin(125*DEG)],step:2,side:'l',dy:40},
   {k:'pbox',t:'Коробка подключения ЭТС МК',p:PB.p(lid),n:PB.t,step:2},
-  {k:'tbox',t:'Термостат',p:TB.p(lid),n:TB.t,step:3,side:'l'},
+  {k:'tbox',t:'Коробка контрольная ЭТС МК',p:TB.p(lid),n:TB.t,step:3,side:'l'},
+  {k:'pcable',t:'Силовой кабель',p:[GRp[0],2.6,GRp[2]],n:PB.r,step:1},
+  {k:'ccable',t:'Контрольный кабель',p:[GRt[0],2.0,GRt[2]],n:TB.r,step:3,side:'l'},
   {k:'sensor',t:'Датчик температуры',p:spp,n:Rd,step:3,side:'l',dy:40},
   {k:'endseal',t:'Концевая заделка',p:[END+0.04,ycn,zc],n:[0,.5,1],step:3,dy:40},
   {k:'cab',t:'Шкаф управления ЭТС ШУО',p:[CX,CB.top+0.04,CZ],n:[0,.3,1],step:1,dy:-34},
   {k:'jacket',t:'Термочехол на задвижке',p:[VXo,OY+0.3,0.1],n:[0,.6,.8],step:4},
-  {k:'insT',t:'Теплоизоляция',p:[-0.6,5.4,Math.sqrt(Math.pow(RS+0.11,2)-0.36)],n:[-.5,0,.85],step:4,ex:true,side:'l'},
-  {k:'cladT',t:'Защитный кожух',p:[0.75,6.4,Math.sqrt(Math.pow(RS+0.135,2)-0.5625)],n:[.6,0,.8],step:4,ex:true}];
+  {k:'insT',t:'Теплоизоляция',p:[-0.6,5.4,Math.sqrt(Math.pow(RS+0.208,2)-0.36)],n:[-.5,0,.85],step:4,ex:true,side:'l'},
+  {k:'cladT',t:'Защитный кожух',p:[0.75,6.4,Math.sqrt(Math.pow(RS+0.223,2)-0.5625)],n:[.6,0,.8],step:4,ex:true}];
  S.cableLen=cable.buf.len;S.cableDur=3800;return S}
 
 /* ---------- viewer ---------- */
@@ -1996,7 +2002,35 @@ Viewer.prototype.power=function(on){var self=this,S=this.cur;this.state.power=on
 Viewer.prototype.temp=function(v){var el=this.root.querySelector('.m3-temp');if(!el)return;if(v===null){el.classList.remove('on');this._tv=null;return}el.classList.add('on')};
 Viewer.prototype.toggleExplode=function(){if(!this.state.showing)return;this.state.exploded=!this.state.exploded;var e=this.state.exploded?1:0,S=this.cur,self=this;
  S.list.forEach(function(o){if(o.group=='ins'){o.e=o.e||0;self.tw('e',e,1100,o)}});this.ui();this.user();if(e)this.tw('dist',Math.min(this.cur.cam.max,this.cur.cam.dist*1.15),900)};
-Viewer.prototype.buildLabels=function(){var L=this.lab;L.innerHTML='';this.cur.labels.forEach(function(l){var d=document.createElement('div');d.className='m3-lab'+(l.side=='l'?' l':'');if(l.dy)d.style.setProperty('--dy',l.dy+'px');d.innerHTML='<i></i><span>'+l.t+'</span>';L.appendChild(d);l.el=d})};
+/* label layout: each caption takes the first free spot around its point (preferred side first), stays inside the frame,
+   never covers another caption or point; a thin leader joins it to its point when it had to move away */
+Viewer.prototype.layoutLabels=function(Ls,W,H){var G=14,M=4,self=this;this._lf=(this._lf||0)+1;
+ /* the viewer's own buttons are obstacles too */
+ if(!this._ui||this._lf%60==1){var cr=this.cv.getBoundingClientRect();this._ui=[];[].forEach.call(this.root.querySelectorAll('.m3-ui button,.m3-zoom button'),function(b){if(b.hidden||!b.offsetWidth)return;var q=b.getBoundingClientRect();self._ui.push([q.left-cr.left-6,q.top-cr.top-6,q.right-cr.left+6,q.bottom-cr.top+6])})}
+ var placed=this._ui.slice(),dots=[];
+ Ls.forEach(function(l){if(l.vis)dots.push([l.sx-8,l.sy-8,l.sx+8,l.sy+8,l])});
+ function hit(r,self){for(var k=0;k<placed.length;k++){var q=placed[k];if(r[0]<q[2]+4&&q[0]<r[2]+4&&r[1]<q[3]+3&&q[1]<r[3]+3)return true}
+  for(k=0;k<dots.length;k++){var d=dots[k];if(d[4]!==self&&r[0]<d[2]&&d[0]<r[2]&&r[1]<d[3]&&d[1]<r[3])return true}return false}
+ var lf=this._lf;
+ var sm=W<520;if(sm!==this._sm){this._sm=sm;Ls.forEach(function(l){l.sp.style.fontSize=sm?'11px':'';l.sp.style.padding=sm?'4px 7px':'';l.w=0;l.ci=undefined})}
+ /* small frames: place from the outside in (left and right ends first), so leaders fan out instead of crossing */
+ var ord=Ls.filter(function(l){return l.vis});if(sm)ord.sort(function(a,b){return Math.abs(b.sx-W/2)-Math.abs(a.sx-W/2)});
+ ord.forEach(function(l){var sp=l.sp;if(!l.w||lf%90==0){l.w=sp.offsetWidth||l.w||120;l.h=sp.offsetHeight||l.h||26}
+  var w=l.w,h=l.h,x=l.sx,y=l.sy,d0=l.dy||0,R=[x+G,0],L=[x-G-w,0],lft=sm?x<W/2:l.side=='l',first=lft?L:R,second=lft?R:L,C=[],k;
+  var LH=h+8,T=[y-40+d0,y+12];for(k=1;k<=7;k++){T.push(y-40+d0-k*LH);T.push(y+12+k*LH)}
+  T.forEach(function(t){C.push([first[0],t]);C.push([second[0],t])});T.forEach(function(t){C.push([x-w/2,t]);C.push([M,t]);C.push([W-w-M,t])});
+  if(lf%60==0)l.ci=undefined;
+  var ord=[];if(l.ci!==undefined)ord.push(l.ci);for(k=0;k<C.length;k++)if(k!==l.ci)ord.push(k);
+  function rect(i){var cx=Math.min(Math.max(C[i][0],M),W-w-M),cy=Math.min(Math.max(C[i][1],M),H-h-M);return[cx,cy,cx+w,cy+h]}
+  var best=null,bi=ord[0];for(k=0;k<ord.length;k++){var r=rect(ord[k]);if(!hit(r,l)){best=r;bi=ord[k];break}}
+  if(!best){var bd2=1e18;for(var gy=M;gy<=H-h-M;gy+=8)for(var gx=M;gx<=W-w-M;gx+=16){var r=[gx,gy,gx+w,gy+h];if(hit(r,l))continue;var ex=Math.max(r[0]-x,0,x-r[2]),ey=Math.max(r[1]-y,0,y-r[3]),dd=ex*ex+ey*ey;if(dd<bd2){bd2=dd;best=r}}if(best)bi=0}
+  if(!best){var ba=1e18;for(k=0;k<C.length;k++){var r=rect(k),ar=0;placed.forEach(function(q){var ox=Math.min(r[2],q[2])-Math.max(r[0],q[0]),oy=Math.min(r[3],q[3])-Math.max(r[1],q[1]);if(ox>0&&oy>0)ar+=ox*oy});if(ar<ba){ba=ar;best=r;bi=k}}}
+  l.ci=bi;placed.push(best);
+  sp.style.left=(best[0]-x).toFixed(1)+'px';sp.style.top=(best[1]-y).toFixed(1)+'px';sp.style.right='auto';
+  /* leader from the point to the nearest edge of the caption */
+  var nx=Math.min(Math.max(x,best[0]),best[2]),ny=Math.min(Math.max(y,best[1]),best[3]),dx=nx-x,dy=ny-y,dl=Math.sqrt(dx*dx+dy*dy);
+  if(dl>16){l.ln.style.display='block';l.ln.style.width=(dl-6).toFixed(1)+'px';l.ln.style.transform='rotate('+Math.atan2(dy,dx).toFixed(3)+'rad)'}else l.ln.style.display='none'})};
+Viewer.prototype.buildLabels=function(){var L=this.lab;L.innerHTML='';this.cur.labels.forEach(function(l){var d=document.createElement('div');d.className='m3-lab'+(l.side=='l'?' l':'');if(l.dy)d.style.setProperty('--dy',l.dy+'px');d.innerHTML='<s style="position:absolute;left:0;top:-0.75px;height:1.5px;display:none;background:rgba(15,31,53,.55);transform-origin:0 50%;text-decoration:none"></s><i></i><span>'+l.t+'</span>';L.appendChild(d);l.el=d;l.sp=d.querySelector('span');l.ln=d.querySelector('s');l.ci=undefined;l.w=0})};
 Viewer.prototype.loop=function(now){requestAnimationFrame(this.loop);
  var r=this.root.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight)return;
  var self=this,S=this.cur;if(!S)return;
@@ -2016,7 +2050,8 @@ Viewer.prototype.loop=function(now){requestAnimationFrame(this.loop);
  S.labels.forEach(function(l){var show=self.state.showing&&st>=l.step&&(!l.ex||ex);var p=l.p;if(l.ex){var off=[0,0,0];S.list.some(function(o){if(o.key==l.k){off=o.pos;return true}});p=add(p,off)}
   var v=[VP[0]*p[0]+VP[4]*p[1]+VP[8]*p[2]+VP[12],VP[1]*p[0]+VP[5]*p[1]+VP[9]*p[2]+VP[13],VP[3]*p[0]+VP[7]*p[1]+VP[11]*p[2]+VP[15]];
   var face=dot(nrm(l.n),nrm(sub(eye,p)))>-0.15;if(v[2]<=0)show=false;
-  var x=(v[0]/v[2]*0.5+0.5)*W,y=(1-(v[1]/v[2]*0.5+0.5))*H;l.el.style.transform='translate('+x.toFixed(1)+'px,'+y.toFixed(1)+'px)';l.el.classList.toggle('on',show&&face&&x>0&&x<W&&y>0&&y<H)});
+  var x=(v[0]/v[2]*0.5+0.5)*W,y=(1-(v[1]/v[2]*0.5+0.5))*H;l.sx=x;l.sy=y;l.vis=show&&face&&x>0&&x<W&&y>0&&y<H;l.el.style.transform='translate('+x.toFixed(1)+'px,'+y.toFixed(1)+'px)';l.el.classList.toggle('on',l.vis)});
+ this.layoutLabels(S.labels,W,H);
  /* temperature read-out */
  if(this._tv){var el=this.root.querySelector('.m3-temp b');if(el){var t=Math.round(this._tv.t);el.textContent=(t>0?'+':t<0?'−':'')+Math.abs(t)+' °C'}}};
 
