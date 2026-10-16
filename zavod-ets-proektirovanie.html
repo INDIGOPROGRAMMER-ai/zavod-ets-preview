@@ -1174,16 +1174,21 @@ a.dtab:hover{color:var(--ink)}a.dtab[aria-current="page"]:hover{color:#fff;backg
 .dp-more-row a:hover{text-decoration:underline}
 .req2 .logo-anim{margin-top:34px;max-width:200px}
 @media (max-width:900px){.dp-d2{grid-template-columns:1fr}.dp-d2 a{height:auto;grid-template-columns:1fr}.dp-d2 figure{aspect-ratio:16/8}}
-.m3-sec{background:var(--navy2);color:#fff;padding-top:clamp(32px,3vw,48px);padding-bottom:clamp(32px,3vw,48px)}
+.m3-sec{background:var(--navy2);color:#fff;padding-top:clamp(16px,2.4vh,36px);padding-bottom:clamp(18px,2.8vh,40px)}
+/* the 3D block (heading + viewer) fits the screen under the header and the directions bar: the viewer takes all the height left */
+.m3-root{display:flex;flex-direction:column;min-height:min(calc(100vh - var(--m3top,139px) - var(--m3pad,44px)),1000px);min-height:min(calc(100svh - var(--m3top,139px) - var(--m3pad,44px)),1000px)}
+.m3-root>.m3-head{flex:none}
 .m3-hint.hide{opacity:0}.m3-hint{transition:opacity .5s,background-color .3s,color .3s}
 .m3-sec .dp-h2{color:#fff}.m3-sec .dp-p{color:rgba(255,255,255,.82);max-width:62ch}
 .m3-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px 40px;margin-bottom:22px}
 .m3-head .dp-h2{margin-bottom:10px}
-@media (max-height:1000px) and (min-width:901px){.m3-sec{padding-top:22px}.m3-head{margin-bottom:14px}.m3-head .dp-h2{font-size:28px;margin-bottom:6px}.m3-head .dp-p{font-size:15.5px;max-width:80ch}.m3-tabs button{padding:9px 18px}.m3{height:clamp(440px,calc(100vh - var(--hdr) - 96px),760px);height:clamp(440px,calc(100svh - var(--hdr) - 96px),760px)}}
+@media (max-height:1000px) and (min-width:901px){.m3-head{margin-bottom:14px}.m3-head .dp-h2{font-size:28px;margin-bottom:6px}.m3-head .dp-p{font-size:15.5px;max-width:80ch}.m3-tabs button{padding:9px 18px}}
+/* short screens: heading and tabs in one row, the how-to line moves into the viewer */
+@media (max-height:820px) and (min-width:901px){.m3-head{align-items:center;margin-bottom:12px}.m3-head .dp-h2{margin-bottom:0}.m3-head .dp-p{display:none}.m3 .m3-hint .i{display:block}}
 .m3-tabs{display:inline-flex;padding:5px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18)}
 .m3-tabs button{border:0;background:transparent;color:rgba(255,255,255,.82);font:800 15px var(--sans);padding:11px 22px;border-radius:999px;cursor:pointer;transition:background-color .2s,color .2s}
 .m3-tabs button:hover{color:#fff}.m3-tabs button[aria-selected="true"]{background:#fff;color:var(--navy)}
-.m3{position:relative;height:clamp(440px,calc(100vh - var(--hdr) - 96px),760px);height:clamp(440px,calc(100svh - var(--hdr) - 96px),760px);border-radius:var(--r);overflow:hidden;background:radial-gradient(120% 90% at 50% 25%,#fff 0%,#eef2f6 55%,#dbe3ea 100%);box-shadow:0 30px 70px rgba(0,0,0,.35)}
+.m3{position:relative;flex:1 0 380px;max-height:880px;border-radius:var(--r);overflow:hidden;background:radial-gradient(120% 90% at 50% 25%,#fff 0%,#eef2f6 55%,#dbe3ea 100%);box-shadow:0 30px 70px rgba(0,0,0,.35)}
 .m3 canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block;touch-action:pan-y;cursor:grab}.m3 canvas:active{cursor:grabbing}
 .m3-labels{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;overflow:hidden}
 .m3-lab{position:absolute;left:0;top:0;opacity:0;transition:opacity .35s;--dy:0px}
@@ -1206,14 +1211,14 @@ a.dtab:hover{color:var(--ink)}a.dtab[aria-current="page"]:hover{color:#fff;backg
 .m3-temp i{width:10px;height:10px;border-radius:50%;background:#FF7A1A;box-shadow:0 0 10px #FF7A1A;animation:m3p 1.2s ease-in-out infinite}
 .m3-temp b{font-size:18px;color:#FFB466;min-width:62px;text-align:right}
 @keyframes m3p{50%{opacity:.35}}
-.m3-hint{position:absolute;left:18px;top:16px;font:700 14px var(--sans);color:var(--steel);padding:7px 11px;border-radius:8px;background:rgba(255,255,255,.94);transition:background-color .3s,color .3s;pointer-events:none}
-.m3-hint .t{display:none}@media (pointer:coarse){.m3-hint .d{display:none}.m3-hint .t{display:inline}}
+.m3-hint{position:absolute;left:18px;top:16px;max-width:calc(100% - 36px);font:700 14px/1.4 var(--sans);color:var(--steel);padding:7px 11px;border-radius:8px;background:rgba(255,255,255,.94);transition:background-color .3s,color .3s;pointer-events:none}
+.m3-hint .i{display:none;color:var(--ink);font-weight:800}.m3-hint .t{display:none}@media (pointer:coarse){.m3-hint .d{display:none}.m3-hint .t{display:inline}}
 .m3-hint.flash{background:var(--navy);color:#fff}
 .m3-load{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font:700 15px var(--sans);color:var(--body)}
 .m3-root.ready .m3-load{display:none}
 .m3-fallback{display:none;position:absolute;top:0;right:0;bottom:0;left:0;align-items:center;justify-content:center;padding:24px;text-align:center;font:700 16px var(--sans);color:var(--steel)}
 .m3-root.nogl .m3-fallback{display:flex}.m3-root.nogl canvas,.m3-root.nogl .m3-ui,.m3-root.nogl .m3-zoom,.m3-root.nogl .m3-hint,.m3-root.nogl .m3-load,.m3-root.nogl .m3-tabs{display:none}
-@media (max-width:700px){.m3{height:500px}.m3-ui{right:66px;left:12px;bottom:12px}.m3-ui button{min-height:44px;font-size:14px;padding:0 14px}.m3-zoom{right:12px;bottom:12px}.m3-lab span{font-size:12px;padding:5px 9px}.m3-temp{right:12px;top:12px;font-size:12.5px}.m3-hint{left:12px;top:12px}}
+@media (max-width:700px){.m3{flex-basis:400px}.m3-ui{right:66px;left:12px;bottom:12px}.m3-ui button{min-height:44px;font-size:14px;padding:0 14px}.m3-zoom{right:12px;bottom:12px}.m3-lab span{font-size:12px;padding:5px 9px}.m3-temp{right:12px;top:12px;font-size:12.5px}.m3-hint{left:12px;top:12px}}
 @media (max-width:700px){.dp-more-row a{padding-block:8px}.req2-t dd a{display:inline-block;padding-block:6px}}
 .pg-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 24px;flex-wrap:wrap}
 .pg-head .dp-h2{margin-bottom:20px}.pg-head .tl{margin-bottom:24px}
@@ -1372,10 +1377,13 @@ a.dtab:hover{color:var(--ink)}a.dtab[aria-current="page"]:hover{color:#fff;backg
  .dl-slim{padding:26px 0}
  .dl-slim .dp-h2{font-size:21px;margin-bottom:10px}
  /* 3D */
- .m3-sec{padding-top:30px}
+ .m3-sec{padding-top:20px;padding-bottom:24px}
+ /* phones: the how-to line lives inside the viewer, so the model gets the height */
+ .m3-head .dp-p{display:none}
+ .m3 .m3-hint .i{display:block}
  .m3-head{margin-bottom:14px;gap:12px}
  .m3-tabs button{padding:9px 16px;font-size:14px}
- .m3{height:clamp(440px,calc(100vh - 190px),560px);height:clamp(440px,calc(100svh - 190px),560px)}
+ .m3{flex-basis:400px}
  /* objects page */
  .dp-sec .ob-g{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 10px}
  .ob-i button{border-radius:12px}
@@ -1422,7 +1430,7 @@ a.dtab:hover{color:var(--ink)}a.dtab[aria-current="page"]:hover{color:#fff;backg
 <div class="m3-tabs" role="tablist" aria-label="Объект"><button type="button" role="tab" data-m3="scene:pipe" aria-selected="true">Трубопровод</button><button type="button" role="tab" data-m3="scene:tank" aria-selected="false">Резервуар</button></div></div>
 <div class="m3"><canvas aria-label="Интерактивная 3D-модель системы электрообогрева"></canvas><div class="m3-labels" aria-hidden="true"></div>
 <div class="m3-load">Загружаем 3D-модель…</div>
-<div class="m3-hint"><span class="d">Вращайте мышью · Ctrl + колесо: масштаб · двойной клик: исходный вид</span><span class="t">Проведите пальцем, чтобы повернуть</span></div>
+<div class="m3-hint"><b class="i">Нажмите «Показать систему электрообогрева», чтобы увидеть, из чего она состоит</b><span class="d">Вращайте мышью · Ctrl + колесо: масштаб · двойной клик: исходный вид</span><span class="t">Проведите пальцем, чтобы повернуть</span></div>
 
 <div class="m3-ui"><button type="button" class="m3-p" data-m3="heat"><span>Показать систему электрообогрева</span></button><button type="button" class="m3-s" data-m3="explode" disabled><span>Разобрать по слоям</span></button></div>
 <div class="m3-zoom"><button type="button" class="m3-lb" data-m3="labels" aria-pressed="false" aria-label="Показать подписи" title="Показать подписи" hidden><svg class="i-on" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h10l4 5-4 5H3z"/><circle cx="7.5" cy="12" r="1.2"/></svg></button><button type="button" data-m3="in" aria-label="Приблизить">+</button><button type="button" data-m3="out" aria-label="Отдалить">−</button><button type="button" data-m3="reset" aria-label="Исходный вид">⟲</button></div>
@@ -1956,9 +1964,16 @@ function Viewer(root,opts){var self=this;this.root=root;root.classList.add('m3-n
  cv.addEventListener('wheel',function(e){if(!e.ctrlKey&&!e.metaKey){self.hint();return}e.preventDefault();self.zoom(e.deltaY>0?1.1:0.9)},{passive:false});
  cv.addEventListener('dblclick',function(){self.resetView()});
  root.querySelectorAll('[data-m3]').forEach(function(b){b.addEventListener('click',function(){var a=b.getAttribute('data-m3');
-  if(a=='in')self.zoom(0.85);else if(a=='out')self.zoom(1.18);else if(a=='reset')self.resetView();else if(a=='heat')self.toggleHeat();else if(a=='labels'){var on=root.classList.contains('m3-nolab');root.classList.toggle('m3-nolab',!on);b.setAttribute('aria-pressed',on?'true':'false');var t=on?'Скрыть подписи':'Показать подписи';b.setAttribute('aria-label',t);b.setAttribute('title',t)}else if(a=='explode')self.toggleExplode();
+  if(a=='heat'||a.indexOf('scene:')==0)self.fit();if(a=='in')self.zoom(0.85);else if(a=='out')self.zoom(1.18);else if(a=='reset')self.resetView();else if(a=='heat')self.toggleHeat();else if(a=='labels'){var on=root.classList.contains('m3-nolab');root.classList.toggle('m3-nolab',!on);b.setAttribute('aria-pressed',on?'true':'false');var t=on?'Скрыть подписи':'Показать подписи';b.setAttribute('aria-label',t);b.setAttribute('title',t)}else if(a=='explode')self.toggleExplode();
   else if(a.indexOf('scene:')==0)self.setScene(a.slice(6))})});
  this.loop=this.loop.bind(this);requestAnimationFrame(this.loop)}
+/* when the user starts the demo or switches the object and the block is cut off by the screen edge,
+   bring the whole block (or at least the viewer) into view under the pinned header bars */
+Viewer.prototype.fit=function(){var sec=this.root.parentNode||this.root,top=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--m3top'))||0,
+ r=sec.getBoundingClientRect(),av=innerHeight-top,dy=null;
+ if(r.height<=av+2){if(r.top<top-2||r.bottom>innerHeight+2)dy=r.top-top}
+ else{var m=this.root.querySelector('.m3').getBoundingClientRect();if(m.height<=av-8&&(m.top<top||m.bottom>innerHeight))dy=m.top-top-8}
+ if(dy!==null&&Math.abs(dy)>3){try{window.scrollBy({top:dy,behavior:'smooth'})}catch(e){window.scrollBy(0,dy)}}};
 Viewer.prototype.user=function(){this.auto=false;this.lastUser=performance.now();var h=this.root.querySelector('.m3-hint');if(h&&!this._hid){this._hid=1;setTimeout(function(){h.classList.add('hide')},2500)}};
 Viewer.prototype.hint=function(){var h=this.root.querySelector('.m3-hint');if(!h)return;h.classList.add('flash');clearTimeout(this._h);this._h=setTimeout(function(){h.classList.remove('flash')},1400)};
 Viewer.prototype.zoom=function(f){var c=this.cur.cam;this.dist=clamp(this.dist*f,c.min,c.max);this.user()};
@@ -2041,7 +2056,7 @@ Viewer.prototype.loop=function(now){requestAnimationFrame(this.loop);
  if(!this.auto&&now-this.lastUser>6000)this.auto=true;
  if(this.auto)this.yaw+=0.0016;else{this.vy*=0.92;}
  var asp=this.cv.width/this.cv.height,D=this.dist*(asp<1.3?1.3/asp:1);var cp=Math.cos(this.pitch),eye=[this.target[0]+Math.sin(this.yaw)*cp*D,this.target[1]+Math.sin(this.pitch)*D,this.target[2]+Math.cos(this.yaw)*cp*D];
- var P=M4.persp(0.62,asp,0.1,200);/* lens shift: lift the picture a little so the buttons along the bottom never cover the model */P[9]=-(this.cur.cam.shift||0)*Math.min(0.12,60/Math.max(1,this.cv.clientHeight));var V=M4.look(eye,this.target,[0,1,0]),VP=M4.mul(P,V);
+ var P=M4.persp(0.62,asp,0.1,200);/* lens shift: lift the picture a little so the buttons along the bottom never cover the model */P[9]=-(this.cur.cam.shift||0)*Math.min(0.2,90/Math.max(1,this.cv.clientHeight));var V=M4.look(eye,this.target,[0,1,0]),VP=M4.mul(P,V);
  /* per-object model matrices (pop-in scales around the object's own centre) */
  S.list.forEach(function(o){if(o.s!==undefined&&o.s<0.999){var s=Math.max(0.0001,o.s),c=o._c;o.m=M4.trs([c[0]*(1-s)+o.pos[0],c[1]*(1-s)+o.pos[1],c[2]*(1-s)+o.pos[2]],o.rot,[s,s,s])}else o.m=null});
  this.R.draw(S.list,VP,eye,(now-this.t0)/1000);
@@ -2062,7 +2077,13 @@ var _add=Scene.prototype.add;Scene.prototype.add=function(key,g,mat,opt){var mn=
 window.ETS3D={init:function(root,opts){try{var v=new Viewer(root,opts);v.setScene(opts.start||'pipe');root.classList.add('ready');return v}catch(e){root.classList.add('nogl');if(window.console)console.warn('3D:',e);return null}}};
 })();
 </script>
-<script>(function(){var r=document.getElementById('m3root');if(!r)return;function go(){if(r.__v)return;r.__v=1;setTimeout(function(){window.ETS3D&&ETS3D.init(r,{tank:window.ETS_TANK,start:'pipe'})},30)}
+<script>(function(){var r=document.getElementById('m3root');if(!r)return;
+/* size the block to the screen: --m3top = header + whatever bar is pinned under it, --m3pad = the section's own paddings */
+function sz(){var t=0,h=document.querySelector('.site-h'),d=document.querySelector('.dnav'),mb=document.querySelector('.mdir'),sec=r.parentNode,cs;
+ if(h)t+=h.offsetHeight;if(d&&getComputedStyle(d).position=='sticky')t+=d.offsetHeight;else if(mb&&getComputedStyle(mb).display!='none'){var b=mb.querySelector('.mdir-b');t+=b?b.offsetHeight:0}
+ document.documentElement.style.setProperty('--m3top',t+'px');cs=getComputedStyle(sec);sec.style.setProperty('--m3pad',Math.round(parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom))+'px')}
+sz();addEventListener('resize',sz);addEventListener('load',sz);
+function go(){if(r.__v)return;r.__v=1;setTimeout(function(){window.ETS3D&&ETS3D.init(r,{tank:window.ETS_TANK,start:'pipe'})},30)}
 if('IntersectionObserver' in window){var io=new IntersectionObserver(function(e){if(e[0].isIntersecting){io.disconnect();go()}},{rootMargin:'300px'});io.observe(r)}else go();})();</script><section id="s2" class="dp-sec alt"><div class="wrap dp-2"><div><h2 class="dp-h2">Как мы проектируем</h2>
 <p class="dp-p">Разработка проектной документации ведётся в тесном взаимодействии с техническими отделами Заказчика: так быстрее решаются возникающие вопросы и согласуются технические решения.</p>
 <p class="dp-p">Цель этапа рабочего проектирования: комплект рабочей документации, который удовлетворяет требованиям Заказчика. Эта документация становится основой для дальнейшей работы технологических и электромонтажных подразделений, служб материально-технического снабжения и комплектации.</p></div>
