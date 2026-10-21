@@ -1848,7 +1848,7 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,MM=KS,PR=54*MM,TX=-1.0,X0=TX-1450
  [1050,2050].forEach(function(m){support([TX,0,-m*MM],[0,0,1])});
  /* ---- heating: cable Ø10 on the side of the pipe at the level of the axis ---- */
  var rc=5*MM,RC=PR+rc,TH=Math.PI/2,THT=-Math.asin(14.5/59);function vp(x,th,r){return[x,Y+r*Math.cos(th),r*Math.sin(th)]}function onPipe(x,th){return vp(x,th,RC)}
- var BA=X(952.5),BB=TX,YF=Y+Math.sqrt(PR*PR-0.0039)+0.001,END=X(3012.5),ENDL=X(-3594.5);
+ var BA=X(952.5),BB=TX,YF=Y+Math.sqrt(PR*PR-0.0039)+0.001,END=XB-0.03,ENDL=XA+0.03;
  /* designer's box on its leg: foot on top of the pipe, lid towards the cable side, the M25 gland along the pipe towards the cabinet */
  function PL(x){return function(p){return[x+p[0]*KS,YF+p[1]*KS,(p[2]+5)*KS]}}
  var PPL=PL(BA),TPL=PL(BB),GL=PPL(KP(-114,20,38)),TGL=TPL(KP(-114,20,38));
@@ -1858,7 +1858,10 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,MM=KS,PR=54*MM,TX=-1.0,X0=TX-1450
  /* over a flanged joint the cable lifts along the neck, crosses the rims of both flanges and comes back down */
  var RJ=119*MM;function jog(c,d){return[onPipe(c-d*60*MM,TH),vp(c-d*29*MM,TH,RJ),vp(c+d*29*MM,TH,RJ),onPipe(c+d*60*MM,TH)]}
  var pathR=relax2(fromBox(1).concat(jog(C1,1),[onPipe(END,TH)]),0.012),pathL=relax2(fromBox(-1).concat(jog(C2,-1),[onPipe(ENDL,TH)]),0.012);
- var cable=S.add('cable',tube(G(),pathR,rc,8),MAT.cable,{group:'heat',prog:0,fit:FIT});S.add('cable',tube(G(),pathL,rc,8),MAT.cable,{group:'heat',prog:0,fit:FIT});
+ /* both sections run on along the whole pipe and dissolve with it, so no cable end is ever in sight; each is laid at the same pace,
+    3.5 units a second, so the long one keeps drawing on out of view */
+ var SPD=3.5,cable=S.add('cable',tube(G(),pathR,rc,8),MAT.cable,{group:'heat',prog:0,fade:FADE,fit:FIT}),cL=S.add('cable',tube(G(),pathL,rc,8),MAT.cable,{group:'heat',prog:0,fade:FADE,fit:FIT});
+ cable.cdur=cable.buf.len/SPD*1000;cL.cdur=cL.buf.len/SPD*1000;
  /* section helpers for bands round the pipe (u = z, v = y above the axis) and round the branch (u = x, v = y) */
  function fr(x){return{O:[x,Y,0],U:[0,0,1],V:[0,1,0],X:[1,0,0]}}function uv(p){return[p[2],p[1]-Y]}
  function frB(z){return{O:[TX,Y,z],U:[1,0,0],V:[0,1,0],X:[0,0,1]}}function uvB(p){return[p[0]-TX,p[1]-Y]}
@@ -1871,12 +1874,10 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,MM=KS,PR=54*MM,TX=-1.0,X0=TX-1450
  [[BA,'pbox',PPL,50,0.03],[BB,'tbox',TPL,59,0.018]].forEach(function(b){var g=G();[-b[3],b[3]].forEach(function(xm){var x=b[0]+xm*KS,P=secAt(x,0.02);
   [[-29,0],[-29,18],[-28.3,20.5],[-26.5,22.3],[-24,23],[14,23],[16.5,22.3],[18.3,20.5],[19,18],[19,0]].forEach(function(q){P.push(uv(b[2]([xm,q[1],q[0]])))});
   merge(g,pfsBand(fr(x),P,[Math.sin(1.0),Math.cos(1.0)],b[4]))});S.add(b[1]=='pbox'?'pfs':'tpfs',g,MAT.chrome,{group:'heat'})});
- /* his fastening bands: every 350 mm along the whole heated length (the one under the power box is left out) */
- var ft=G();[-2902.5,-2552.5,-2202.5,-1852.5,-1502.5,-1152.5,-802.5,-452.5,-102.5,247.5,597.5,1247.5,1597.5,1947.5,2297.5,2647.5].forEach(function(m){var x=X(m);if(x<ENDL+0.05||x>END-0.05)return;
-  merge(ft,hullBand(fr(x),secAt(x,0.02),10*MM,0.003))});
- S.add('tape',ft,MAT.chrome,{group:'heat',fit:FIT});
- /* end seals at both far ends (out of the phone framing: there the sections simply run off the edges) */
- [[END,1],[ENDL,-1]].forEach(function(e){var es=yToX(cyl(G(),0.026,-0.075,0.055,16,0,Math.PI*2,true,true));if(e[1]<0)xf(es,function(p){return[-p[0],p[1],p[2]]},function(n){return[-n[0],n[1],n[2]]});var o=onPipe(e[0],TH);moveG(es,e[0],o[1],o[2]);S.add('endseal',es,MAT.gland,{group:'heat',fit:FIT})});
+ /* his fastening bands every 350 mm, now along the whole cable: his grid runs from 597.5 mm left of the power box side and from
+    1247.5 mm on the other side (none under the box); each band pops in just after the cable has reached it */
+ function bandAt(m){var x=X(m),bo=S.add('tape',hullBand(fr(x),secAt(x,0.02),10*MM,0.003),MAT.chrome,{group:'heat',fade:FADE,fit:FIT});bo.pd=Math.max(0,2350+Math.abs(x-BA)/SPD*1000+150-5000)+Math.random()*150}
+ for(var m=597.5;X(m)>ENDL+0.05;m-=350)bandAt(m);for(m=1247.5;X(m)<END-0.05;m+=350)bandAt(m);
  /* the sensor, its lead, and the bands that hold them (his band near the tee, one over the sensor) */
  var sg=yToZ(cyl(G(),SR,-50*MM,50*MM,16,0,Math.PI*2,true,true));moveG(sg,sp2[0],sp2[1],sp2[2]);S.add('sensor',sg,MAT.sensor,{group:'heat'});
  S.add('sensor',tube(G(),lead,3*MM,6),MAT.steel,{group:'heat',prog:0});
@@ -1909,7 +1910,6 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,MM=KS,PR=54*MM,TX=-1.0,X0=TX-1450
   {k:'pcable',t:'Силовой кабель',p:[GL[0]-0.3,0.95,HZ],n:[0,0,1],step:1},
   {k:'ccable',t:'Контрольный кабель',p:[TGL[0]-0.3,0.85,HZ2],n:[0,0,1],step:3},
   {k:'sensor',t:'Датчик температуры',p:[TX,Y+PR+2*SR+0.01,SZ],n:[0,1,.2],step:3,dy:40},
-  {k:'endseal',t:'Концевая заделка',p:onPipe(END+0.04,TH),n:[0,-.2,1],step:3,dy:40},
   {k:'cab',t:'Шкаф управления ЭТС ШУО',p:[CX,CB.top+0.04,CZ],n:[0,.3,1],step:1,side:'l'},
   {k:'jacket',t:'Съёмный термочехол на фланцах',p:[C1,Y+JR,0.12],n:[0,1,.5],step:4},
   {k:'insT',t:'Теплоизоляция',p:[X(1750),Y+RI,0.06],n:[0,1,.5],step:4,ex:true,side:'l'},
@@ -2147,9 +2147,9 @@ Viewer.prototype.toggleHeat=function(){var self=this,S=this.cur;this.anims=this.
  var CD=S.cableDur||2600,D=CD-2600;
  pop('stand',300);pop('pclip',1500);pop('lek',2000);pop('hose',2050,450);pop('cclip',5150+D);pop('slek',6200+D);
  pop('pbox',1850);pop('strip',2050);at(1850,function(){self.labStep=Math.max(self.labStep,2)});
- at(2350,function(){S.list.forEach(function(o){if(o.key=='cable'){o.visible=true;o.prog=0;o.__heat=1;self.tw('prog',1.001,CD,o,null,0,function(t){return t})}})});
+ at(2350,function(){S.list.forEach(function(o){if(o.key=='cable'){o.visible=true;o.prog=0;o.__heat=1;self.tw('prog',1.001,o.cdur||CD,o,null,0,function(t){return t})}})});
  /* fastening tape / strip tongues once the cable is laid */
- at(5000+D,function(){S.list.forEach(function(o){if(o.key=='tape'){o.visible=true;o.s=0;o.__heat=1;self.tw('s',1,500,o,null,Math.random()*400,easeOutBack);}})});
+ at(5000+D,function(){S.list.forEach(function(o){if(o.key=='tape'){o.visible=true;o.s=0;o.__heat=1;self.tw('s',1,500,o,null,o.pd!==undefined?o.pd:Math.random()*400,easeOutBack);}})});
  /* 3. end seal where the section ends; the control cable comes from the cabinet, then the thermostat and its sensor */
  pop('pfs',5000+D);pop('tpfs',7000+D);pop('endseal',5100+D);pop('ccable',5250+D,900);pop('tbox',6050+D);pop('sensor',6300+D,700);at(6050+D,function(){self.labStep=Math.max(self.labStep,3)});
  /* 4. insulation, cladding, jacket */
