@@ -2136,10 +2136,11 @@ Viewer.prototype.ui=function(){var b=this.root.querySelector('[data-m3="heat"]')
 Viewer.prototype.toggleHeat=function(){var self=this,S=this.cur;this.anims=this.anims.filter(function(a){return !a.o.__heat});
  if(this.state.showing){/* hide */this.state.showing=false;this.state.exploded=false;this.state.power=0;
   S.list.forEach(function(o){if(o.group=='heat'){o.visible=false;if(o.prog!==undefined)o.prog=0}if(o.group=='ins'){self.tw('alpha',0,400,o);self.tw('e',0,10,o)}o.glow=0;S.explode(o,0)});
-  this.labStep=0;this.ui();this.temp(null);return}
+  this._seq=(this._seq||0)+1;this.labStep=0;this.ui();this.temp(null);return}
  this.state.showing=true;this.labStep=0;this.ui();this.user();this.auto=true;
- var T=0;function at(ms,f){setTimeout(f,ms)}
- function pop(k,ms,dur){at(ms,function(){S.list.forEach(function(o){if(o.key==k){o.visible=true;o.__heat=1;if(o.prog!==undefined){o.prog=0;self.tw('prog',1.001,dur||700,o,null,0,function(t){return t})}else{o.s=0;self.tw('s',1,550,o,null,0,easeOutBack)}}})})}
+ /* the whole build-up runs at K of its original timing; steps still pending when the system is hidden or the scene is switched are dropped */
+ var K=0.75,seq=this._seq=(this._seq||0)+1;function at(ms,f){setTimeout(function(){if(self._seq===seq&&self.cur===S&&self.state.showing)f()},ms*K)}
+ function pop(k,ms,dur){at(ms,function(){S.list.forEach(function(o){if(o.key==k){o.visible=true;o.__heat=1;if(o.prog!==undefined){o.prog=0;self.tw('prog',1.001,(dur||700)*K,o,null,0,function(t){return t})}else{o.s=0;self.tw('s',1,550*K,o,null,0,easeOutBack)}}})})}
  /* 1. control cabinet, then the power cable in its metal hose runs to the junction box */
  pop('cab',0);pop('lamp',0);at(0,function(){self.labStep=1});
  pop('pcable',650,1300);
@@ -2147,13 +2148,13 @@ Viewer.prototype.toggleHeat=function(){var self=this,S=this.cur;this.anims=this.
  var CD=S.cableDur||2600,D=CD-2600;
  pop('stand',300);pop('pclip',1500);pop('lek',2000);pop('hose',2050,450);pop('cclip',5150+D);pop('slek',6200+D);
  pop('pbox',1850);pop('strip',2050);at(1850,function(){self.labStep=Math.max(self.labStep,2)});
- at(2350,function(){S.list.forEach(function(o){if(o.key=='cable'){o.visible=true;o.prog=0;o.__heat=1;self.tw('prog',1.001,o.cdur||CD,o,null,0,function(t){return t})}})});
+ at(2350,function(){S.list.forEach(function(o){if(o.key=='cable'){o.visible=true;o.prog=0;o.__heat=1;self.tw('prog',1.001,(o.cdur||CD)*K,o,null,0,function(t){return t})}})});
  /* fastening tape / strip tongues once the cable is laid */
- at(5000+D,function(){S.list.forEach(function(o){if(o.key=='tape'){o.visible=true;o.s=0;o.__heat=1;self.tw('s',1,500,o,null,o.pd!==undefined?o.pd:Math.random()*400,easeOutBack);}})});
+ at(5000+D,function(){S.list.forEach(function(o){if(o.key=='tape'){o.visible=true;o.s=0;o.__heat=1;self.tw('s',1,500*K,o,null,(o.pd!==undefined?o.pd:Math.random()*400)*K,easeOutBack);}})});
  /* 3. end seal where the section ends; the control cable comes from the cabinet, then the thermostat and its sensor */
  pop('pfs',5000+D);pop('tpfs',7000+D);pop('endseal',5100+D);pop('ccable',5250+D,900);pop('tbox',6050+D);pop('sensor',6300+D,700);at(6050+D,function(){self.labStep=Math.max(self.labStep,3)});
  /* 4. insulation, cladding, jacket */
- at(7100+D,function(){S.list.forEach(function(o){if(o.group=='ins'){var a=o.key.indexOf('ins')==0?S.layers.ins:o.key=='jacket'?S.layers.jacket:S.layers.clad;self.tw('alpha',a,900,o)}});self.labStep=Math.max(self.labStep,4)});
+ at(7100+D,function(){S.list.forEach(function(o){if(o.group=='ins'){var a=o.key.indexOf('ins')==0?S.layers.ins:o.key=='jacket'?S.layers.jacket:S.layers.clad;self.tw('alpha',a,900*K,o)}});self.labStep=Math.max(self.labStep,4)});
  /* 5. power on */
  at(8200+D,function(){self.power(true)})};
 Viewer.prototype.power=function(on){var self=this,S=this.cur;this.state.power=on?1:0;S.list.forEach(function(o){if(o.key=='cable'||o.key=='lamp'){self.tw('glow',on?1:0,1200,o)}});
