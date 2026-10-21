@@ -1581,10 +1581,11 @@ function moveG(g,dx,dy,dz){for(var k=0;k<g.p.length;k+=3){g.p[k]+=dx;g.p[k+1]+=d
 var VS='attribute vec3 aP;attribute vec3 aN;attribute vec2 aUV;uniform mat4 uM;uniform mat4 uVP;uniform mat3 uNM;varying vec3 vW;varying vec3 vN;varying vec2 vUV;'+
  'void main(){vec4 w=uM*vec4(aP,1.0);vW=w.xyz;vN=uNM*aN;vUV=aUV;gl_Position=uVP*w;}';
 var FS='precision highp float;varying vec3 vW;varying vec3 vN;varying vec2 vUV;uniform vec3 uCam;uniform vec3 uBase;uniform sampler2D uTex;uniform float uUseTex;uniform float uMetal;uniform float uRough;'+
- 'uniform float uAlpha;uniform vec3 uEmis;uniform float uProg;uniform float uGlow;uniform float uTime;uniform float uLen;uniform float uUnlit;uniform float uTexA;uniform float uHi;'+
+ 'uniform float uAlpha;uniform vec3 uEmis;uniform float uProg;uniform float uGlow;uniform float uTime;uniform float uLen;uniform float uUnlit;uniform float uTexA;uniform float uHi;uniform vec4 uFade;'+
  'vec3 aces(vec3 x){return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.0,1.0);}'+
  'void main(){if(vUV.x>uProg)discard;vec4 tx=texture2D(uTex,vUV);vec3 base=uBase;float a=uAlpha;'+
  'if(uUseTex>0.5)base*=pow(tx.rgb,vec3(2.2));if(uTexA>0.5)a*=tx.a;'+
+ 'if(uFade.w>0.5){a*=smoothstep(uFade.x,uFade.x+uFade.z,vW.x)*(1.0-smoothstep(uFade.y-uFade.z,uFade.y,vW.x));if(a<0.004)discard;}'+
  'if(uUnlit>0.5){gl_FragColor=vec4(pow(base,vec3(1.0/2.2)),a);return;}'+
  'vec3 N=normalize(vN);if(!gl_FrontFacing)N=-N;vec3 V=normalize(uCam-vW);'+
  'vec3 L1=normalize(vec3(0.55,0.85,0.45));vec3 L2=normalize(vec3(-0.7,0.35,-0.45));'+
@@ -1607,7 +1608,7 @@ function Renderer(canvas){
  var pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,VS));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,FS));gl.linkProgram(pr);
  if(!gl.getProgramParameter(pr,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(pr));gl.useProgram(pr);
  var A={p:gl.getAttribLocation(pr,'aP'),n:gl.getAttribLocation(pr,'aN'),u:gl.getAttribLocation(pr,'aUV')},U={};
- ['uM','uVP','uNM','uCam','uBase','uTex','uUseTex','uMetal','uRough','uAlpha','uEmis','uProg','uGlow','uTime','uLen','uUnlit','uTexA','uHi'].forEach(function(k){U[k]=gl.getUniformLocation(pr,k)});
+ ['uM','uVP','uNM','uCam','uBase','uTex','uUseTex','uMetal','uRough','uAlpha','uEmis','uProg','uGlow','uTime','uLen','uUnlit','uTexA','uHi','uFade'].forEach(function(k){U[k]=gl.getUniformLocation(pr,k)});
  var white=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,white);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([255,255,255,255]));
  gl.enable(gl.DEPTH_TEST);gl.clearColor(0,0,0,0);
  function upload(g){var o={};function buf(t,data){var b=gl.createBuffer();gl.bindBuffer(t,b);gl.bufferData(t,data,gl.STATIC_DRAW);return b}
@@ -1626,7 +1627,7 @@ function Renderer(canvas){
   gl.uniformMatrix4fv(U.uVP,false,VP);gl.uniform3fv(U.uCam,cam);gl.uniform1f(U.uTime,time);
   var op=[],tr=[];list.forEach(function(o){if(!o.visible||o.alpha<=0.003)return;(o.alpha<0.999||o.blend?tr:op).push(o)});
   tr.forEach(function(o){o._d=len(sub(o.center||[o.pos[0],o.pos[1],o.pos[2]],cam))});tr.sort(function(a,b){return b._d-a._d});
-  gl.disable(gl.BLEND);gl.depthMask(true);op.forEach(function(o){one(o)});
+  op.sort(function(a,b){return(a.fade?1:0)-(b.fade?1:0)});gl.disable(gl.BLEND);gl.depthMask(true);op.forEach(function(o){if(o.fade){gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);one(o);gl.disable(gl.CULL_FACE)}else one(o)});
   gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
   tr.forEach(function(o){if(o.twoPass){gl.enable(gl.CULL_FACE);gl.cullFace(gl.FRONT);one(o);gl.cullFace(gl.BACK);one(o);gl.disable(gl.CULL_FACE)}else one(o)});
   gl.depthMask(true);gl.disable(gl.BLEND)}
@@ -1634,7 +1635,7 @@ function Renderer(canvas){
   gl.uniformMatrix4fv(U.uM,false,m);gl.uniformMatrix3fv(U.uNM,false,nmat(m));
   gl.uniform3fv(U.uBase,o.color);gl.uniform1f(U.uMetal,o.metal);gl.uniform1f(U.uRough,o.rough);gl.uniform1f(U.uAlpha,o.alpha);
   gl.uniform3fv(U.uEmis,o.emis||[0,0,0]);gl.uniform1f(U.uGlow,o.glow||0);gl.uniform1f(U.uProg,o.prog===undefined?2:o.prog);gl.uniform1f(U.uLen,b.len||1);
-  gl.uniform1f(U.uUnlit,o.unlit?1:0);gl.uniform1f(U.uTexA,o.texA?1:0);gl.uniform1f(U.uHi,o.hi||0);
+  var fd=o.fade;gl.uniform4f(U.uFade,fd?fd[0]:0,fd?fd[1]:0,fd?fd[2]:1,fd?1:0);gl.uniform1f(U.uUnlit,o.unlit?1:0);gl.uniform1f(U.uTexA,o.texA?1:0);gl.uniform1f(U.uHi,o.hi||0);
   gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,o.tex||white);gl.uniform1i(U.uTex,0);gl.uniform1f(U.uUseTex,o.tex?1:0);
   gl.bindBuffer(gl.ARRAY_BUFFER,b.p);gl.enableVertexAttribArray(A.p);gl.vertexAttribPointer(A.p,3,gl.FLOAT,false,0,0);
   gl.bindBuffer(gl.ARRAY_BUFFER,b.n);gl.enableVertexAttribArray(A.n);gl.vertexAttribPointer(A.n,3,gl.FLOAT,false,0,0);
@@ -1684,7 +1685,7 @@ function Scene(R){this.R=R;this.list=[];this.labels=[];this.steps=[];this.byKey=
 Scene.prototype.add=function(key,g,mat,opt){opt=opt||{};wind(g);var o={key:key,buf:this.R.upload(g),color:mat.color,metal:mat.metal,rough:mat.rough,emis:mat.emis,alpha:opt.alpha===undefined?1:opt.alpha,
  base:{alpha:opt.alpha===undefined?1:opt.alpha},pos:opt.pos||[0,0,0],rot:opt.rot||[0,0,0],scl:opt.scl||[1,1,1],visible:opt.visible!==false,tex:opt.tex,twoPass:opt.twoPass,blend:opt.blend,
  texA:opt.texA,unlit:opt.unlit,center:opt.center,group:opt.group||'base',prog:opt.prog,anchor:opt.anchor};
- o.p0=o.pos.slice();this.list.push(o);(this.byKey[key]=this.byKey[key]||[]).push(o);return o};
+ o.fade=opt.fade;o.fit=opt.fit;o.p0=o.pos.slice();this.list.push(o);(this.byKey[key]=this.byKey[key]||[]).push(o);return o};
 Scene.prototype.ground=function(r,cx,cz,shR){var g=disc(G(),r,0,64);this.add('floor',g,MAT.ground,{tex:this.R.canvasTex(floorCanvas()),texA:true,unlit:true,blend:true,pos:[cx||0,-0.002,cz||0],center:[0,-50,0]});
  var s=disc(G(),shR||r*.55,0.001,48);this.add('shadow',s,{color:[1,1,1],metal:0,rough:1},{tex:this.R.canvasTex(shadowCanvas()),texA:true,unlit:true,blend:true,pos:[cx||0,0,cz||0],scl:[1.6,1,0.7],center:[0,-49,0]})};
 
@@ -1799,6 +1800,9 @@ function wind(g){for(var k=0;k<g.i.length;k+=3){var a=g.i[k]*3,b=g.i[k+1]*3,c=g.
    and jumps over every flanged joint; bands every 350 mm; the sensor box sits on the tee, the sensor lies on top of the branch.
    Added where his model is silent: sliding T-shoe supports, a blind flange closing the branch, removable jackets on the flanges ---- */
 function buildPipe(R){var S=new Scene(R),Y=1.3,MM=KS,PR=54*MM,TX=-1.0,X0=TX-1450*MM,X1=TX+2050*MM,k;
+ /* the line runs on past both ends of the heated part (as in his model, where the pipe goes on for metres) and dissolves into the
+    background, so its cut ends are never seen at any angle; only X0..X1 counts when the picture is fitted into a phone frame */
+ var FADE=[-15,14.6,7],XA=FADE[0]-0.05,XB=FADE[1]+0.05,LONG={fade:FADE,fit:[X0-0.1,X1+0.1]};
  function X(mm){return TX+mm*MM}
  S.cam={target:[-0.7,0.75,-0.1],dist:10.8,yaw:-0.55,pitch:0.36,min:4,max:19,shift:1};
  S.ground(7.5,-0.5,-0.4,5.2);
@@ -1813,8 +1817,8 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,MM=KS,PR=54*MM,TX=-1.0,X0=TX-1450
     pushV(g,add(o,add(scl(ax,t0),scl(d,r0))),n,[s/seg,0]);pushV(g,add(o,add(scl(ax,t1),scl(d,r1))),n,[s/seg,1])}
    for(s=0;s<seg;s++){var q=b+s*2;g.i.push(q,q+2,q+1,q+1,q+2,q+3)}}
   return wind(g)}
- /* the pipe itself: a hollow Ø108x6 tube, so the cut ends of this fragment read as a section */
- var pipe=lathe([[0,54],[(X1-X0)/MM,54],[(X1-X0)/MM,48],[0,48],[0,54]],[X0,Y,0],[1,0,0],56);S.add('pipe',pipe,MAT.pipe);
+ /* the pipe itself, Ø108 */
+ S.add('pipe',lathe([[0,54],[(XB-XA)/MM,54]],[XA,Y,0],[1,0,0],56),MAT.pipe,LONG);
  /* weld-neck flange DN100 (his profile): neck, disc Ø215 x 17, raised face Ø164; t from the weld end towards the joint face */
  var FL=[[0,54.5],[12,55],[33,63.4],[33,107.5],[50,107.5],[50,81.9],[53,81.9],[53,48],[0,48],[0,54.5]];
  /* 8 studs M16 on the Ø180 circle with a nut on each side; holes straddle the vertical, so the side of the pipe stays clear for the cable */
@@ -1833,12 +1837,13 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,MM=KS,PR=54*MM,TX=-1.0,X0=TX-1450
  var BL=980,BJ=BL+53+1.2;S.add('pipe',lathe([[0,54],[BL,54],[BL,48]],[TX,Y,0],[0,0,-1],48),MAT.pipe);
  joint([TX,Y,-BJ*MM],[0,0,-1],[1,0,0],true);
  /* sliding T-shoe supports (shoe welded under the pipe, 100 mm high, so it comes out under the insulation) on steel stands */
- function support(c,along){var g=G(),a=along,s=cross([0,1,0],a),hb=Y-PR-100*MM;
+ function support(c,along,opt){var g=G(),a=along,s=cross([0,1,0],a),hb=Y-PR-100*MM;
   function bx(w,h,d,cx,cy,cz){/* w along the pipe, d across */var b=box(G(),1,1,1,0,0,0);xf(b,function(p){return add([cx,cy,cz],add(add(scl(a,p[0]*w),[0,p[1]*h,0]),scl(s,p[2]*d)))},function(n){return nrm(add(add(scl(a,n[0]),[0,n[1],0]),scl(s,n[2])))});merge(g,b)}
   var r=c;bx(200*MM,8*MM,100*MM,r[0],hb+4*MM,r[2]);bx(200*MM,(100-4)*MM,8*MM,r[0],hb+8*MM+46*MM,r[2]);
   bx(260*MM,10*MM,160*MM,r[0],hb-5*MM,r[2]);bx(60*MM,hb-20*MM,60*MM,r[0],(hb-10*MM)/2+5*MM,r[2]);bx(200*MM,10*MM,200*MM,r[0],5*MM,r[2]);
-  S.add('support',wind(g),MAT.dark)}
- var SUPX=[X(-977.5),X(422.5),X(1772.5)];SUPX.forEach(function(x){support([x,0,0],[1,0,0])});support([TX,0,-640*MM],[0,0,1]);
+  S.add('support',wind(g),MAT.dark,opt)}
+ /* every 1.4 m; the ones out on the long run fade with the pipe */
+ [-3777.5,-2377.5,-977.5,422.5,1772.5,3172.5,4572.5].forEach(function(m){support([X(m),0,0],[1,0,0],LONG)});support([TX,0,-640*MM],[0,0,1]);
  /* ---- heating: cable Ø10 on the side of the pipe at the level of the axis ---- */
  var rc=5*MM,RC=PR+rc,TH=Math.PI/2,THT=-Math.asin(14.5/59);function vp(x,th,r){return[x,Y+r*Math.cos(th),r*Math.sin(th)]}function onPipe(x,th){return vp(x,th,RC)}
  var BA=X(952.5),BB=TX,YF=Y+Math.sqrt(PR*PR-0.0039)+0.001,END=X(1880),ENDL=X(-1350);
@@ -1883,9 +1888,9 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,MM=KS,PR=54*MM,TX=-1.0,X0=TX-1450
  /* insulation (his: 25 mm, Ø158) and cladding in two halves each, so they can be pulled apart; the flanged joints are left
     open under removable jackets, the box legs go through */
  var RI=PR+25*MM,RK=RI+0.006,JH=110*MM,JR=150*MM,IO=80*MM;
- function hS(key,r,x0,x1,top,mat){var g=hArc(Y,r,x0,x1,top?-Math.PI/2:Math.PI/2,top?Math.PI/2:Math.PI*1.5,48);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[(x0+x1)/2,Y+(top?.2:-.2),0]})}
+ function hS(key,r,x0,x1,top,mat,far){var g=hArc(Y,r,x0,x1,top?-Math.PI/2:Math.PI/2,top?Math.PI/2:Math.PI*1.5,48);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[(x0+x1)/2,Y+(top?.2:-.2),0],fade:far?FADE:undefined,fit:far?LONG.fit:undefined})}
  function zS(key,r,z0,z1,top,mat){var g=yToZ(cyl(G(),r,z0,z1,40,top?0:Math.PI,top?Math.PI:Math.PI*2));moveG(g,TX,Y,0);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[TX,Y+(top?.2:-.2),(z0+z1)/2]})}
- [[X0+0.08,C2-IO],[C2+IO,C1-IO],[C1+IO,X1-0.08]].forEach(function(s){hS('insT',RI,s[0],s[1],true,MAT.insul);hS('insB',RI,s[0],s[1],false,MAT.insul);hS('cladT',RK,s[0],s[1],true,MAT.clad);hS('cladB',RK,s[0],s[1],false,MAT.clad)});
+ [[X0+0.08,C2-IO],[C2+IO,C1-IO],[C1+IO,X1-0.08],[XA,X0+0.08,1],[X1-0.08,XB,1]].forEach(function(s){hS('insT',RI,s[0],s[1],true,MAT.insul,s[2]);hS('insB',RI,s[0],s[1],false,MAT.insul,s[2]);hS('cladT',RK,s[0],s[1],true,MAT.clad,s[2]);hS('cladB',RK,s[0],s[1],false,MAT.clad,s[2])});
  var zb0=-BJ*MM+IO,zb1=-RI*0.55;zS('insT',RI,zb0,zb1,true,MAT.insul);zS('insB',RI,zb0,zb1,false,MAT.insul);zS('cladT',RK,zb0,zb1,true,MAT.clad);zS('cladB',RK,zb0,zb1,false,MAT.clad);
  /* removable jackets: a drum over each flanged joint, a cap over the blind flange of the branch */
  function jacket(c,ax,cap){var o=G(),a0=cap?-JH:-JH,a1=cap?(1.2+23+20)*MM:JH;
@@ -2243,7 +2248,7 @@ Viewer.prototype.chrome=function(V){var c=this._iv,self=this,i;
    a little whenever the box would not fit there (it never zooms in past the scene's own framing) */
 Viewer.prototype.centre=function(P,V){var S=this.cur,VP0=M4.mul(P,V),x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,n=0;
  S.list.forEach(function(o){if(!o.visible||!o._bb||o.key=='floor'||o.key=='shadow'||(o.alpha!==undefined&&o.alpha<0.02))return;
-  var a=o._bb[0],b=o._bb[1],q=o.pos||[0,0,0];
+  var a=o._bb[0],b=o._bb[1],q=o.pos||[0,0,0];if(o.fit){a=[Math.max(a[0],o.fit[0]),a[1],a[2]];b=[Math.min(b[0],o.fit[1]),b[1],b[2]];if(a[0]>b[0])return}
   for(var k=0;k<8;k++){var x=(k&1?b[0]:a[0])+q[0],y=(k&2?b[1]:a[1])+q[1],z=(k&4?b[2]:a[2])+q[2],w=VP0[3]*x+VP0[7]*y+VP0[11]*z+VP0[15];if(w<=0.01)continue;
    var nx=(VP0[0]*x+VP0[4]*y+VP0[8]*z+VP0[12])/w,ny=(VP0[1]*x+VP0[5]*y+VP0[9]*z+VP0[13])/w;
    if(nx<x0)x0=nx;if(nx>x1)x1=nx;if(ny<y0)y0=ny;if(ny>y1)y1=ny;n++}});
