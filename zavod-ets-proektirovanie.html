@@ -1681,7 +1681,7 @@ function floorCanvas(){var c=document.createElement('canvas');c.width=c.height=5
  x.globalCompositeOperation='destination-in';x.fillStyle=m;x.fillRect(0,0,512,512);return c}
 
 function Scene(R){this.R=R;this.list=[];this.labels=[];this.steps=[];this.byKey={}}
-Scene.prototype.add=function(key,g,mat,opt){opt=opt||{};var o={key:key,buf:this.R.upload(g),color:mat.color,metal:mat.metal,rough:mat.rough,emis:mat.emis,alpha:opt.alpha===undefined?1:opt.alpha,
+Scene.prototype.add=function(key,g,mat,opt){opt=opt||{};wind(g);var o={key:key,buf:this.R.upload(g),color:mat.color,metal:mat.metal,rough:mat.rough,emis:mat.emis,alpha:opt.alpha===undefined?1:opt.alpha,
  base:{alpha:opt.alpha===undefined?1:opt.alpha},pos:opt.pos||[0,0,0],rot:opt.rot||[0,0,0],scl:opt.scl||[1,1,1],visible:opt.visible!==false,tex:opt.tex,twoPass:opt.twoPass,blend:opt.blend,
  texA:opt.texA,unlit:opt.unlit,center:opt.center,group:opt.group||'base',prog:opt.prog,anchor:opt.anchor};
  o.p0=o.pos.slice();this.list.push(o);(this.byKey[key]=this.byKey[key]||[]).push(o);return o};
@@ -1761,7 +1761,7 @@ function hullBand(fr,pts,w,t){var H=hull2(pts),n=H.length,N=[],k,g=G();
  strip(function(j){return W(H[j],-w/2)},function(j){return O(j,-w/2)},function(){return scl(fr.X,-1)});
  g.H=H;g.N=N;return g}
 /* PFS hose clamp = hull band + its screw housing, placed where the band runs along direction dir (in section coords) */
-function pfsBand(fr,pts,dir){var w=0.03,t=0.003,g=hullBand(fr,pts,w,t),H=g.H,N=g.N,best=0,bd=-1e9;
+function pfsBand(fr,pts,dir,w){w=w||0.03;var t=0.003,g=hullBand(fr,pts,w,t),H=g.H,N=g.N,best=0,bd=-1e9;
  for(var k=0;k<H.length;k++){var d=H[k][0]*dir[0]+H[k][1]*dir[1];if(d>bd){bd=d;best=k}}
  var rd=add(scl(fr.U,N[best][0]),scl(fr.V,N[best][1])),tg=cross(fr.X,rd),c=add(add(fr.O,add(scl(fr.U,H[best][0]),scl(fr.V,H[best][1]))),scl(rd,t+0.012));
  var b=box(G(),0.042,0.024,0.06,0,0,0);xf(b,function(p){return add(c,add(add(scl(fr.X,p[0]),scl(rd,p[1])),scl(tg,p[2])))},function(n){return add(add(scl(fr.X,n[0]),scl(rd,n[1])),scl(tg,n[2]))});
@@ -1789,97 +1789,123 @@ function supportLoop(Y,xs,h,A,RC){function vp(x,th){return[x,Y+RC*Math.cos(th),R
  q.push(vp(xs-h,A));q.push(vp(xs+h,A));ut(xs+h,A,A2,1);q.push(vp(xs-h,A2));ut(xs-h,A2,A3,-1);q.push(vp(xs+h+0.05,A3));
  for(k=1;k<=8;k++){var t=k/8;q.push(vp(xs+h+0.05+0.4*t,A3+(A-A3)*t*t*(3-2*t)))}return q}
 
-/* --- pipeline --- */
-function buildPipe(R){var S=new Scene(R),Y=1.3,PR=0.22,X0=-4.4,X1=4.4,VX=1.55,SUP=[-2.5,0.1,3.1];
- S.cam={target:[-0.7,1.15,0.4],dist:11.8,yaw:-0.62,pitch:0.3,min:5,max:20,shift:1};
- S.ground(7.5,0,0,5.2);
- /* pipe sections + flanges */
- function hpipe(x0,x1,r,y,z,key,mat,opt){var g=yToX(cyl(G(),r,x0,x1,40,0,Math.PI*2,true,true));moveG(g,0,y,z||0);return S.add(key,g,mat,opt)}
- hpipe(X0,VX-0.32,PR,Y,0,'pipe',MAT.pipe);hpipe(VX+0.32,X1,PR,Y,0,'pipe',MAT.pipe);
- [[X0-0.06,X0+0.04],[X1-0.04,X1+0.06],[VX-0.36,VX-0.28],[VX+0.28,VX+0.36]].forEach(function(f){hpipe(f[0],f[1],PR+0.11,Y,0,'pipe',MAT.steel)});
- /* gate valve */
- hpipe(VX-0.28,VX+0.28,PR+0.03,Y,0,'valve',MAT.valve);
- var vb=G();box(vb,0.42,0.5,0.36,VX,Y+0.18,0);S.add('valve',vb,MAT.valve);
- var bon=cyl(G(),0.08,Y+0.42,Y+1.05,20,0,Math.PI*2,true,true);moveG(bon,VX,0,0);S.add('valve',bon,MAT.valve);
- var stem=cyl(G(),0.025,Y+1.05,Y+1.32,12,0,Math.PI*2,true,true);moveG(stem,VX,0,0);S.add('valve',stem,MAT.steel);
- var wp=[];for(var k=0;k<=48;k++){var a=k/48*Math.PI*2;wp.push([VX+Math.cos(a)*0.26,Y+1.3,Math.sin(a)*0.26])}S.add('valve',tube(G(),wp,0.03,10),MAT.wheel);
- var sp=G();box(sp,0.52,0.03,0.04,VX,Y+1.3,0);box(sp,0.04,0.03,0.52,VX,Y+1.3,0);S.add('valve',sp,MAT.wheel);
- /* supports (pipe shoes) */
- SUP.forEach(function(x){var g=G();box(g,0.12,Y-PR-0.02,0.12,x,(Y-PR)/2,0);box(g,0.6,0.04,0.42,x,0.02,0);box(g,0.5,0.06,0.16,x,Y-PR-0.03,0);S.add('support',g,MAT.dark)});
- /* ---- heating system, laid like the designer's project (Кузоватинское, 2022): one power box on its leg feeds two sections,
-    one each way; each cable leaves the leg along the top of the pipe, bends over the pipe down to its side and runs straight
-    along the side at the level of the axis; over a flange it jumps with a bracket-shaped bend; fastening bands every 350 mm;
-    the sensor box has its own leg, the sensor lies on top of the pipe and its lead goes into that leg ---- */
- var RC=PR+0.016,TH=Math.PI/2,rc=0.022;function vp(x,th,r){return[x,Y+r*Math.cos(th),r*Math.sin(th)]}function onPipe(x,th){return vp(x,th,RC)}
- var BOXX=-1.25,TBX=-3.35,YF=Y+Math.sqrt(PR*PR-0.0039)+0.001,ENDL=X0+0.22,END=X1-0.32;
- /* designer's box on its leg: foot on top of the pipe, lid towards the viewer, the M25 gland along the pipe towards the cabinet */
+/* make every triangle wind counter-clockwise when seen from the side its normals face (the shader flips normals on back faces) */
+function wind(g){for(var k=0;k<g.i.length;k+=3){var a=g.i[k]*3,b=g.i[k+1]*3,c=g.i[k+2]*3,P=g.p,N=g.n;
+ var e1=[P[b]-P[a],P[b+1]-P[a+1],P[b+2]-P[a+2]],e2=[P[c]-P[a],P[c+1]-P[a+1],P[c+2]-P[a+2]],cr=cross(e1,e2),n=[N[a]+N[b]+N[c],N[a+1]+N[b+1]+N[c+1],N[a+2]+N[b+2]+N[c+2]];
+ if(dot(cr,n)<0){var t=g.i[k+1];g.i[k+1]=g.i[k+2];g.i[k+2]=t}}return g}
+/* --- pipeline: the designer's heated line taken from his model (Кузоватинское, 20.10.2026), true to his dimensions:
+   Ø108 pipe, two flanged joints (weld-neck flanges DN100, 8 studs M16), an equal tee 108x108 with a branch.
+   His heating: one power box on its leg feeds two sections, each cable runs along the side of the pipe at the level of the axis
+   and jumps over every flanged joint; bands every 350 mm; the sensor box sits on the tee, the sensor lies on top of the branch.
+   Added where his model is silent: sliding T-shoe supports, a blind flange closing the branch, removable jackets on the flanges ---- */
+function buildPipe(R){var S=new Scene(R),Y=1.3,MM=KS,PR=54*MM,TX=-1.0,X0=TX-1450*MM,X1=TX+2050*MM,k;
+ function X(mm){return TX+mm*MM}
+ S.cam={target:[-0.7,0.75,-0.1],dist:10.8,yaw:-0.55,pitch:0.36,min:4,max:19,shift:1};
+ S.ground(7.5,-0.5,-0.4,5.2);
+ /* geometry in a local frame: o origin, ax the axis, e1/e2 across it */
+ function frame(ax){var e1=Math.abs(ax[1])<0.9?nrm(cross([0,1,0],ax)):[1,0,0];return{ax:ax,e1:e1,e2:cross(ax,e1)}}
+ function place(g,o,F){/* local x->e1, y->ax, z->e2 */return xf(g,function(p){return add(o,add(add(scl(F.e1,p[0]),scl(F.ax,p[1])),scl(F.e2,p[2])))},function(n){return add(add(scl(F.e1,n[0]),scl(F.ax,n[1])),scl(F.e2,n[2]))})}
+ /* surface of revolution: prof = [[t,r],...] in mm along the axis from o; crisp edges between the profile segments */
+ function lathe(prof,o,ax,seg){seg=seg||48;var g=G(),F=frame(ax);
+  for(var i=0;i<prof.length-1;i++){var t0=prof[i][0]*MM,r0=prof[i][1]*MM,t1=prof[i+1][0]*MM,r1=prof[i+1][1]*MM,dt=t1-t0,dr=r1-r0,L=Math.hypot(dt,dr);if(L<1e-9)continue;
+   var nr=dt/L,na=-dr/L,b=g.p.length/3;
+   for(var s=0;s<=seg;s++){var a=2*Math.PI*s/seg,d=add(scl(F.e1,Math.cos(a)),scl(F.e2,Math.sin(a))),n=add(scl(d,nr),scl(ax,na));
+    pushV(g,add(o,add(scl(ax,t0),scl(d,r0))),n,[s/seg,0]);pushV(g,add(o,add(scl(ax,t1),scl(d,r1))),n,[s/seg,1])}
+   for(s=0;s<seg;s++){var q=b+s*2;g.i.push(q,q+2,q+1,q+1,q+2,q+3)}}
+  return wind(g)}
+ /* the pipe itself: a hollow Ø108x6 tube, so the cut ends of this fragment read as a section */
+ var pipe=lathe([[0,54],[(X1-X0)/MM,54],[(X1-X0)/MM,48],[0,48],[0,54]],[X0,Y,0],[1,0,0],56);S.add('pipe',pipe,MAT.pipe);
+ /* weld-neck flange DN100 (his profile): neck, disc Ø215 x 17, raised face Ø164; t from the weld end towards the joint face */
+ var FL=[[0,54.5],[12,55],[33,63.4],[33,107.5],[50,107.5],[50,81.9],[53,81.9],[53,48],[0,48],[0,54.5]];
+ /* 8 studs M16 on the Ø180 circle with a nut on each side; holes straddle the vertical, so the side of the pipe stays clear for the cable */
+ function studs(c,F,half){var g=G();for(var j=0;j<8;j++){var a=(22.5+45*j)*Math.PI/180,d=add(scl([0,1,0],Math.cos(a)),scl(F.side,Math.sin(a))),p=add(c,scl(d,90*MM));
+   var st=cyl(G(),8*MM,-(half+18)*MM,(half+18)*MM,10,0,Math.PI*2,true,true);place(st,p,{e1:F.up2,ax:F.ax,e2:F.side2});merge(g,st);
+   [-1,1].forEach(function(sd){var nt=cyl(G(),13.86*MM,0,13*MM,6,Math.PI/6,Math.PI/6+Math.PI*2,true,true);if(sd<0)xf(nt,function(q){return[q[0],-q[1],q[2]]},function(n){return[n[0],-n[1],n[2]]});
+    moveG(nt,0,sd*half*MM,0);place(nt,p,{e1:F.up2,ax:F.ax,e2:F.side2});merge(g,nt)})}return wind(g)}
+ function joint(c,ax,side,blind){/* c: centre of the joint (between the raised faces), ax the pipe axis */
+  var F={ax:ax,side:side,up2:[0,1,0],side2:cross(ax,[0,1,0])},o=G();
+  merge(o,lathe(FL,add(c,scl(ax,-54.2*MM)),ax));
+  if(blind)merge(o,lathe([[0,0],[0,81.9],[3,81.9],[3,107.5],[23,107.5],[23,0]],add(c,scl(ax,1.2*MM)),ax));else merge(o,lathe(FL,add(c,scl(ax,54.2*MM)),scl(ax,-1)));
+  S.add('pipe',o,MAT.pipe);S.add('pipe',lathe([[-1.2,54],[-1.2,84],[1.2,84],[1.2,54]],c,ax),MAT.dark);
+  S.add('pipe',studs(c,F,blind?(1.2+23):21.2),MAT.steel)}
+ var C1=X(1458.7),C2=X(-542.6);joint([C1,Y,0],[1,0,0],[0,0,1]);joint([C2,Y,0],[1,0,0],[0,0,1]);
+ /* equal tee 108x108: the branch leaves towards the back, away from the cable side; it is closed with a blind flange */
+ var BL=980,BJ=BL+53+1.2;S.add('pipe',lathe([[0,54],[BL,54],[BL,48]],[TX,Y,0],[0,0,-1],48),MAT.pipe);
+ joint([TX,Y,-BJ*MM],[0,0,-1],[1,0,0],true);
+ /* sliding T-shoe supports (shoe welded under the pipe, 100 mm high, so it comes out under the insulation) on steel stands */
+ function support(c,along){var g=G(),a=along,s=cross([0,1,0],a),hb=Y-PR-100*MM;
+  function bx(w,h,d,cx,cy,cz){/* w along the pipe, d across */var b=box(G(),1,1,1,0,0,0);xf(b,function(p){return add([cx,cy,cz],add(add(scl(a,p[0]*w),[0,p[1]*h,0]),scl(s,p[2]*d)))},function(n){return nrm(add(add(scl(a,n[0]),[0,n[1],0]),scl(s,n[2])))});merge(g,b)}
+  var r=c;bx(200*MM,8*MM,100*MM,r[0],hb+4*MM,r[2]);bx(200*MM,(100-4)*MM,8*MM,r[0],hb+8*MM+46*MM,r[2]);
+  bx(260*MM,10*MM,160*MM,r[0],hb-5*MM,r[2]);bx(60*MM,hb-20*MM,60*MM,r[0],(hb-10*MM)/2+5*MM,r[2]);bx(200*MM,10*MM,200*MM,r[0],5*MM,r[2]);
+  S.add('support',wind(g),MAT.dark)}
+ var SUPX=[X(-977.5),X(422.5),X(1772.5)];SUPX.forEach(function(x){support([x,0,0],[1,0,0])});support([TX,0,-640*MM],[0,0,1]);
+ /* ---- heating: cable Ø10 on the side of the pipe at the level of the axis ---- */
+ var rc=5*MM,RC=PR+rc,TH=Math.PI/2,THT=-Math.asin(14.5/59);function vp(x,th,r){return[x,Y+r*Math.cos(th),r*Math.sin(th)]}function onPipe(x,th){return vp(x,th,RC)}
+ var BA=X(952.5),BB=TX,YF=Y+Math.sqrt(PR*PR-0.0039)+0.001,END=X(1880),ENDL=X(-1350);
+ /* designer's box on its leg: foot on top of the pipe, lid towards the cable side, the M25 gland along the pipe towards the cabinet */
  function PL(x){return function(p){return[x+p[0]*KS,YF+p[1]*KS,(p[2]+5)*KS]}}
- var PPL=PL(BOXX),TPL=PL(TBX),GL=PPL(KP(-114,20,38)),TGL=TPL(KP(-114,20,38));
+ var PPL=PL(BA),TPL=PL(BB),GL=PPL(KP(-114,20,38)),TGL=TPL(KP(-114,20,38));
  kbox(S,'pbox',PPL,function(n){return n});kbox(S,'tbox',TPL,function(n){return n});
- /* out of the leg channel along the top, 85 mm past the foot a bend over the pipe down to its side */
- function fromBox(d){var q=[onPipe(BOXX+d*0.02,0),onPipe(BOXX+d*0.25,0)],xa=BOXX+d*0.33;for(var k=0;k<=12;k++)q.push(onPipe(xa,TH*k/12));q.push(onPipe(xa+d*0.08,TH));return q}
- /* bracket-shaped jumps: up the face of a flange, across its rim, down the other face (onto the valve body or back to the pipe) */
- var RF=PR+0.11+rc+0.012,RV=PR+0.03+rc+0.004,f0=VX-0.36,f1=VX-0.28,f2=VX+0.28,f3=VX+0.36;
- function J(x,r){return vp(x,TH,r)}
- var qR=fromBox(1).concat([onPipe(f0-0.11,TH),J(f0-0.035,RC+0.012),J(f0-0.035,RF),J(f1+0.035,RF),J(f1+0.035,RV),J(f2-0.035,RV),J(f2-0.035,RF),J(f3+0.035,RF),J(f3+0.035,RC+0.012),onPipe(f3+0.11,TH),onPipe(END,TH)]);
- var qL=fromBox(-1).concat([onPipe(ENDL,TH)]);
- var pathR=relax2(qR,0.02),pathL=relax2(qL,0.02);
+ /* both cable ends leave the leg channel along the top, wrap over the pipe 121 mm from the box and go on along the side */
+ function fromBox(d){var q=[vp(BA+d*24*MM,THT,RC),vp(BA+d*95*MM,THT,RC)],xa=BA+d*121.5*MM;for(var j=0;j<=12;j++)q.push(vp(xa,THT+(TH-THT)*j/12,RC));q.push(onPipe(xa+d*30*MM,TH));return q}
+ /* over a flanged joint the cable lifts along the neck, crosses the rims of both flanges and comes back down */
+ var RJ=119*MM;function jog(c,d){return[onPipe(c-d*60*MM,TH),vp(c-d*29*MM,TH,RJ),vp(c+d*29*MM,TH,RJ),onPipe(c+d*60*MM,TH)]}
+ var pathR=relax2(fromBox(1).concat(jog(C1,1),[onPipe(END,TH)]),0.012),pathL=relax2(fromBox(-1).concat(jog(C2,-1),[onPipe(ENDL,TH)]),0.012);
  var cable=S.add('cable',tube(G(),pathR,rc,8),MAT.cable,{group:'heat',prog:0});S.add('cable',tube(G(),pathL,rc,8),MAT.cable,{group:'heat',prog:0});
- /* section helpers for bands round the pipe (u = z, v = y above the axis) */
+ /* section helpers for bands round the pipe (u = z, v = y above the axis) and round the branch (u = x, v = y) */
  function fr(x){return{O:[x,Y,0],U:[0,0,1],V:[0,1,0],X:[1,0,0]}}function uv(p){return[p[2],p[1]-Y]}
- /* sensor on top of the pipe between the sensor box and the next support, its lead along the top into the box leg */
- var SX=TBX+0.45,SR=0.026,sp2=vp(SX,0,PR+SR),cap=relax2([vp(TBX+0.02,0,PR+0.01),vp(TBX+0.25,0,PR+0.01),vp(SX-0.12,0,PR+0.01),vp(SX-0.075,0,PR+0.012)],0.012);
- var lay=[{pts:pathR,r:rc},{pts:pathL,r:rc},{pts:cap,r:0.009}];
- function secAt(x,hw){var P=circ2([],[0,0],PR+0.001,120);return onSec(lay,function(p){return Math.abs(p[0]-x)<hw},uv,P)}
- /* PFS clamps of each box: seated on the foot wings (between the leg and the end lip), over the cable / lead under them */
- [[BOXX,'pbox',PPL],[TBX,'tbox',TPL]].forEach(function(b){var g=G();[-50,50].forEach(function(xm){var x=b[0]+xm*KS,P=secAt(x,0.03);
+ function frB(z){return{O:[TX,Y,z],U:[1,0,0],V:[0,1,0],X:[0,0,1]}}function uvB(p){return[p[0]-TX,p[1]-Y]}
+ /* sensor on top of the branch, its lead along the top of the branch into the leg of the sensor box */
+ var SR=12*MM,SZ=-300*MM,sp2=[TX,Y+PR+SR,SZ],lead=relax2([[TX,Y+PR+3*MM,-12*MM],[TX,Y+PR+3*MM,-120*MM],[TX,Y+PR+3*MM,SZ+48*MM]],0.012);
+ var lay=[{pts:pathR,r:rc},{pts:pathL,r:rc}],layB=[{pts:lead,r:3*MM}];
+ function secAt(x,hw){var P=circ2([],[0,0],PR+0.0005,120);return onSec(lay,function(p){return Math.abs(p[0]-x)<hw},uv,P)}
+ function secB(z,hw){var P=circ2([],[0,0],PR+0.0005,120);return onSec(layB,function(p){return Math.abs(p[2]-z)<hw},uvB,P)}
+ /* PFS clamps of each box on the foot wings; on the tee they sit at the very ends of the foot, clear of the branch */
+ [[BA,'pbox',PPL,50,0.03],[BB,'tbox',TPL,59,0.018]].forEach(function(b){var g=G();[-b[3],b[3]].forEach(function(xm){var x=b[0]+xm*KS,P=secAt(x,0.02);
   [[-29,0],[-29,18],[-28.3,20.5],[-26.5,22.3],[-24,23],[14,23],[16.5,22.3],[18.3,20.5],[19,18],[19,0]].forEach(function(q){P.push(uv(b[2]([xm,q[1],q[0]])))});
-  merge(g,pfsBand(fr(x),P,[Math.sin(1.0),Math.cos(1.0)]))});S.add(b[1]=='pbox'?'pfs':'tpfs',g,MAT.chrome,{group:'heat'})});
- /* fastening bands round the pipe every 350 mm (kept off the boxes, the valve and the end flanges), FT patches on the valve body */
- var ft=G(),BP=350*KS;for(var kb=-4;kb<=7;kb++){var x=BOXX+kb*BP;if(Math.abs(x-BOXX)<0.45||Math.abs(x-TBX)<0.25||Math.abs(x-SX)<0.25||(x>f0-0.2&&x<f3+0.2)||x<ENDL+0.05||x>END-0.05)continue;
-  merge(ft,hullBand(fr(x),secAt(x,0.03),0.03,0.003))}
- [VX-0.13,VX+0.13].forEach(function(x){tapeAt(ft,J(x,RV),[1,0,0],[0,0,1],0.05,0.1,rc+0.004)});
+  merge(g,pfsBand(fr(x),P,[Math.sin(1.0),Math.cos(1.0)],b[4]))});S.add(b[1]=='pbox'?'pfs':'tpfs',g,MAT.chrome,{group:'heat'})});
+ /* his fastening bands: every 350 mm along the whole heated length (the one under the power box is left out) */
+ var ft=G();[-1502.5,-1152.5,-802.5,-452.5,-102.5,247.5,597.5,1247.5,1597.5,1947.5].forEach(function(m){var x=X(m);if(x<ENDL+0.05||x>END-0.05)return;
+  merge(ft,hullBand(fr(x),secAt(x,0.02),10*MM,0.003))});
  S.add('tape',ft,MAT.chrome,{group:'heat'});
  /* end seals at both far ends */
- [[END,1],[ENDL,-1]].forEach(function(e){var es=yToX(cyl(G(),0.035,-0.1,0.08,16,0,Math.PI*2,true,true));if(e[1]<0)xf(es,function(p){return[-p[0],p[1],p[2]]},function(n){return[-n[0],n[1],n[2]]});var o=onPipe(e[0],TH);moveG(es,e[0],o[1],o[2]);S.add('endseal',es,MAT.gland,{group:'heat'})});
- /* the sensor, its lead, and the band that holds it */
- var sg=yToX(cyl(G(),SR,-0.07,0.07,14,0,Math.PI*2,true,true));moveG(sg,SX,sp2[1],sp2[2]);S.add('sensor',sg,MAT.sensor,{group:'heat'});
- S.add('sensor',tube(G(),cap,0.008,6),MAT.steel,{group:'heat',prog:0});
- S.add('sensor',hullBand(fr(SX),circ2(secAt(SX,0.03),uv(sp2),SR+0.001,12),0.03,0.003),MAT.chrome,{group:'heat'});
+ [[END,1],[ENDL,-1]].forEach(function(e){var es=yToX(cyl(G(),0.026,-0.075,0.055,16,0,Math.PI*2,true,true));if(e[1]<0)xf(es,function(p){return[-p[0],p[1],p[2]]},function(n){return[-n[0],n[1],n[2]]});var o=onPipe(e[0],TH);moveG(es,e[0],o[1],o[2]);S.add('endseal',es,MAT.gland,{group:'heat'})});
+ /* the sensor, its lead, and the bands that hold them (his band near the tee, one over the sensor) */
+ var sg=yToZ(cyl(G(),SR,-50*MM,50*MM,16,0,Math.PI*2,true,true));moveG(sg,sp2[0],sp2[1],sp2[2]);S.add('sensor',sg,MAT.sensor,{group:'heat'});
+ S.add('sensor',tube(G(),lead,3*MM,6),MAT.steel,{group:'heat',prog:0});
+ var sb=hullBand(frB(SZ),circ2(secB(SZ,0.02),uvB(sp2),SR+0.0005,12),0.03,0.003);merge(sb,hullBand(frB(-116*MM),secB(-116*MM,0.02),10*MM,0.003));S.add('sensor',sb,MAT.chrome,{group:'heat'});
  /* control cabinet: power cable and control cable, each in a metal hose; the power hose runs on the outer side so they never cross */
- var CX=-5.3,CZ=1.9,CB=cabinet(S,CX,CZ,1),HR=0.034,gA=CB.gB,gB=CB.gA;
- var pc=smooth([gA,[gA[0]+0.12,gA[1],gA[2]],[gA[0]+0.14,HR,gA[2]],[GL[0]-0.3,HR,gA[2]],[GL[0]-0.3,HR,0.54],[GL[0]-0.3,GL[1],0.54],[GL[0]-0.3,GL[1],GL[2]],GL],0.13,12);
+ var CX=-5.5,CZ=0.75,CB=cabinet(S,CX,CZ,1),HR=0.034,gA=CB.gB,gB=CB.gA,HZ=0.46,HZ2=0.54;
+ var pc=smooth([gA,[gA[0]+0.12,gA[1],gA[2]],[gA[0]+0.14,HR,gA[2]],[GL[0]-0.3,HR,gA[2]],[GL[0]-0.3,HR,HZ],[GL[0]-0.3,GL[1],HZ],[GL[0]-0.3,GL[1],GL[2]],GL],0.13,12);
  S.add('pcable',corr(G(),pc,HR,0.03),MAT.hose,{group:'heat',prog:0});
- var cc=smooth([gB,[gB[0]+0.12,gB[1],gB[2]],[gB[0]+0.14,0.028,gB[2]],[TGL[0]-0.3,0.028,gB[2]],[TGL[0]-0.3,0.028,0.62],[TGL[0]-0.3,TGL[1],0.62],[TGL[0]-0.3,TGL[1],TGL[2]],TGL],0.13,12);
+ var cc=smooth([gB,[gB[0]+0.12,gB[1],gB[2]],[gB[0]+0.14,0.028,gB[2]],[TGL[0]-0.3,0.028,gB[2]],[TGL[0]-0.3,0.028,HZ2],[TGL[0]-0.3,TGL[1],HZ2],[TGL[0]-0.3,TGL[1],TGL[2]],TGL],0.13,12);
  S.add('ccable',corr(G(),cc,0.027,0.026),MAT.hose,{group:'heat',prog:0});
- /* removable thermal jacket on the valve */
- var JR=0.57,JX=0.5,jk=yToX(cyl(G(),JR,VX-JX,VX+JX,48,0,Math.PI*2));
- [[VX-JX,-1],[VX+JX,1]].forEach(function(e){var b=jk.p.length/3;for(var k=0;k<=48;k++){var a=k/48*Math.PI*2,ca=Math.cos(a),sa=Math.sin(a);pushV(jk,[e[0],ca*(PR+0.226),sa*(PR+0.226)],[e[1],0,0],[k/48,0]);pushV(jk,[e[0],ca*JR,sa*JR],[e[1],0,0],[k/48,1])}
-  for(k=0;k<48;k++){var i=b+k*2;jk.i.push(i,i+2,i+1,i+1,i+2,i+3)}});
- moveG(jk,0,Y,0);S.add('jacket',jk,MAT.jacket,{group:'ins',alpha:0,blend:true,twoPass:true,center:[VX,Y,0]});
- /* insulation and cladding: two halves each, so they can be pulled apart */
- function shell(key,r,mat,top){[[X0+0.08,VX-0.42],[VX+0.42,X1-0.08]].forEach(function(s){var g=yToX(cyl(G(),r,s[0],s[1],48,top?0:Math.PI,top?Math.PI:Math.PI*2));
-   for(var k=0;k<g.p.length;k+=3){var y=g.p[k+1],z=g.p[k+2];g.p[k+1]=-z;g.p[k+2]=y;var ny=g.n[k+1],nz=g.n[k+2];g.n[k+1]=-nz;g.n[k+2]=ny}
-   moveG(g,0,Y,0);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[(s[0]+s[1])/2,Y+(top?.2:-.2),0]})})}
- var TI=0.208;/* 80 mm insulation: the box leg goes through it, only the neck under the box stays out */
- shell('insT',PR+TI,MAT.insul,true);shell('insB',PR+TI,MAT.insul,false);shell('cladT',PR+TI+0.015,MAT.clad,true);shell('cladB',PR+TI+0.015,MAT.clad,false);
- /* supports are insulated too: the shoe sits in an insulated box, the joint with the support is sealed */
- SUP.forEach(function(x){var i=G();box(i,0.66,0.3,0.5,x,Y-0.36,0);S.add('insB',i,MAT.insul,{group:'ins',alpha:0,blend:true,twoPass:true,center:[x,Y-0.36,0]});
-  var c=G();box(c,0.69,0.32,0.53,x,Y-0.365,0);box(c,0.2,0.014,0.2,x,Y-0.529,0);S.add('cladB',c,MAT.clad,{group:'ins',alpha:0,blend:true,twoPass:true,center:[x,Y-0.34,0]})});
+ /* insulation (his: 25 mm, Ø158) and cladding in two halves each, so they can be pulled apart; the flanged joints are left
+    open under removable jackets, the box legs go through */
+ var RI=PR+25*MM,RK=RI+0.006,JH=110*MM,JR=150*MM,IO=80*MM;
+ function hS(key,r,x0,x1,top,mat){var g=hArc(Y,r,x0,x1,top?-Math.PI/2:Math.PI/2,top?Math.PI/2:Math.PI*1.5,48);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[(x0+x1)/2,Y+(top?.2:-.2),0]})}
+ function zS(key,r,z0,z1,top,mat){var g=yToZ(cyl(G(),r,z0,z1,40,top?0:Math.PI,top?Math.PI:Math.PI*2));moveG(g,TX,Y,0);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[TX,Y+(top?.2:-.2),(z0+z1)/2]})}
+ [[X0+0.08,C2-IO],[C2+IO,C1-IO],[C1+IO,X1-0.08]].forEach(function(s){hS('insT',RI,s[0],s[1],true,MAT.insul);hS('insB',RI,s[0],s[1],false,MAT.insul);hS('cladT',RK,s[0],s[1],true,MAT.clad);hS('cladB',RK,s[0],s[1],false,MAT.clad)});
+ var zb0=-BJ*MM+IO,zb1=-RI*0.55;zS('insT',RI,zb0,zb1,true,MAT.insul);zS('insB',RI,zb0,zb1,false,MAT.insul);zS('cladT',RK,zb0,zb1,true,MAT.clad);zS('cladB',RK,zb0,zb1,false,MAT.clad);
+ /* removable jackets: a drum over each flanged joint, a cap over the blind flange of the branch */
+ function jacket(c,ax,cap){var o=G(),a0=cap?-JH:-JH,a1=cap?(1.2+23+20)*MM:JH;
+  merge(o,lathe(cap?[[a0/MM,RK/MM+1],[a0/MM,JR/MM],[a1/MM,JR/MM],[a1/MM,0]]:[[a0/MM,RK/MM+1],[a0/MM,JR/MM],[a1/MM,JR/MM],[a1/MM,RK/MM+1]],c,ax,48));
+  S.add('jacket',o,MAT.jacket,{group:'ins',alpha:0,blend:true,twoPass:true,center:c})}
+ jacket([C1,Y,0],[1,0,0]);jacket([C2,Y,0],[1,0,0]);jacket([TX,Y,-BJ*MM],[0,0,-1],true);
  S.layers={ins:0.42,clad:0.24,jacket:0.5};
- S.explode=function(o,e){if(o.key=='cladT')o.pos=[0,1.05*e,0];else if(o.key=='cladB')o.pos=[0,-0.62*e,0];else if(o.key=='insT')o.pos=[0,0.55*e,0];else if(o.key=='insB')o.pos=[0,-0.35*e,0];else if(o.key=='jacket')o.pos=[0,0.9*e,0]};
+ S.explode=function(o,e){if(o.key=='cladT')o.pos=[0,0.85*e,0];else if(o.key=='cladB')o.pos=[0,-0.5*e,0];else if(o.key=='insT')o.pos=[0,0.45*e,0];else if(o.key=='insB')o.pos=[0,-0.28*e,0];else if(o.key=='jacket')o.pos=[0,0.75*e,0]};
  S.labels=[
-  {k:'cable',t:'Греющий кабель',p:onPipe(-2.3,TH),n:[0,0,1],step:2,dy:44,side:'l'},
-  {k:'pbox',t:'Коробка подключения ЭТС МК',p:PPL(KP(0,64,45)),n:[0,1,.3],step:2,side:'l'},
-  {k:'tbox',t:'Коробка контрольная ЭТС МК',p:TPL(KP(0,64,45)),n:[0,1,.3],step:3},
-  {k:'pcable',t:'Силовой кабель',p:[GL[0]-0.3,0.95,0.54],n:[0,0,1],step:1},
-  {k:'ccable',t:'Контрольный кабель',p:[TGL[0]-0.3,0.85,0.62],n:[0,0,1],step:3},
-  {k:'sensor',t:'Датчик температуры',p:vp(SX,0,PR+0.06),n:[0,1,.4],step:3,dy:40},
+  {k:'cable',t:'Греющий кабель',p:onPipe(X(-850),TH),n:[0,0,1],step:2,dy:44,side:'l'},
+  {k:'pbox',t:'Коробка подключения ЭТС МК',p:PPL(KP(0,64,45)),n:[0,1,.3],step:2},
+  {k:'tbox',t:'Коробка контрольная ЭТС МК',p:TPL(KP(0,64,45)),n:[0,1,.3],step:3,side:'l'},
+  {k:'pcable',t:'Силовой кабель',p:[GL[0]-0.3,0.95,HZ],n:[0,0,1],step:1},
+  {k:'ccable',t:'Контрольный кабель',p:[TGL[0]-0.3,0.85,HZ2],n:[0,0,1],step:3},
+  {k:'sensor',t:'Датчик температуры',p:[TX,Y+PR+2*SR+0.01,SZ],n:[0,1,.2],step:3,dy:40},
   {k:'endseal',t:'Концевая заделка',p:onPipe(END+0.04,TH),n:[0,-.2,1],step:3,dy:40},
   {k:'cab',t:'Шкаф управления ЭТС ШУО',p:[CX,CB.top+0.04,CZ],n:[0,.3,1],step:1,side:'l'},
-  {k:'jacket',t:'Термочехол на задвижке',p:[VX,Y+0.38,0.38],n:[0,.7,.7],step:4},
-  {k:'insT',t:'Теплоизоляция',p:[2.7,Y+PR+TI,0.18],n:[0,1,.5],step:4,ex:true,side:'l'},
-  {k:'cladT',t:'Защитный кожух',p:[3.5,Y+PR+TI+0.015,0.18],n:[0,1,.5],step:4,ex:true}];
+  {k:'jacket',t:'Съёмный термочехол на фланцах',p:[C1,Y+JR,0.12],n:[0,1,.5],step:4},
+  {k:'insT',t:'Теплоизоляция',p:[X(1750),Y+RI,0.06],n:[0,1,.5],step:4,ex:true,side:'l'},
+  {k:'cladT',t:'Защитный кожух',p:[X(1950),Y+RK,0.06],n:[0,1,.5],step:4,ex:true}];
  S.cableLen=cable.buf.len;S.cableDur=2600;S.heatTarget='Трубопровод';return S}
 
 /* --- vertical tank on legs --- */
