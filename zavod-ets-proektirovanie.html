@@ -1479,7 +1479,7 @@ a.dtab:hover{color:var(--ink)}a.dtab[aria-current="page"]:hover{color:#fff;backg
 <div class="m3 iv" data-sc="pipe" data-mode="f" data-docs="p"><div class="iv-hd" aria-hidden="true"><div class="iv-tb"><i class="iv-qat"></i><i class="iv-qd"></i><i class="iv-ttl"></i><i class="iv-rt"></i></div><div class="iv-tabs"><i class="iv-tl"></i><i class="iv-tu"></i><i class="iv-tg"></i></div><div class="iv-rb"><i class="iv-rbi"></i></div></div>
 <div class="m3-vp"><canvas aria-label="Интерактивная 3D-модель системы электрообогрева"></canvas><div class="m3-labels" aria-hidden="true"></div><i class="iv-plus" aria-hidden="true"></i><i class="iv-wctl" aria-hidden="true"></i><i class="iv-nav" aria-hidden="true"></i><div class="iv-cube" aria-hidden="true"><div class="iv-cb"></div></div><svg class="iv-tri" viewBox="-45 -45 90 90" aria-hidden="true"></svg>
 <div class="m3-load">Загружаем 3D-модель…</div>
-<div class="m3-hint"><b class="i">Нажмите «Показать систему электрообогрева», чтобы увидеть, из чего она состоит</b><span class="d">Вращайте мышью · Ctrl + колесо: масштаб · двойной клик: исходный вид</span><span class="t">Проведите пальцем, чтобы повернуть</span></div>
+<div class="m3-hint"><b class="i">Нажмите «Показать систему электрообогрева», чтобы увидеть, из чего она состоит</b><span class="d">Вращайте мышью · Ctrl + колесо: масштаб · двойной клик: исходный вид</span><span class="t">Пальцем — поворот, двумя — масштаб</span></div>
 
 <div class="m3-ui"><button type="button" class="m3-p" data-m3="heat"><span>Показать систему электрообогрева</span></button><button type="button" class="m3-s" data-m3="explode" disabled><span>Разобрать по слоям</span></button></div>
 <div class="m3-zoom"><button type="button" class="m3-lb" data-m3="labels" aria-pressed="false" aria-label="Показать подписи" title="Показать подписи" hidden><svg class="i-on" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h10l4 5-4 5H3z"/><circle cx="7.5" cy="12" r="1.2"/></svg></button><button type="button" data-m3="in" aria-label="Приблизить">+</button><button type="button" data-m3="out" aria-label="Отдалить">−</button><button type="button" data-m3="reset" aria-label="Исходный вид">⟲</button></div>
@@ -2100,9 +2100,14 @@ function Viewer(root,opts){var self=this;this.root=root;root.classList.add('m3-n
  this.resize();window.addEventListener('resize',function(){self.resize()});
  /* pointer controls */
  var drag=null;cv.addEventListener('pointerdown',function(e){drag={x:e.clientX,y:e.clientY,id:e.pointerId,touch:e.pointerType=='touch',moved:false};self.user();if(!drag.touch)cv.setPointerCapture(e.pointerId)});
- cv.addEventListener('pointermove',function(e){if(!drag||e.pointerId!==drag.id)return;var dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+ cv.addEventListener('pointermove',function(e){if(!drag||pinch||e.pointerId!==drag.id)return;var dx=e.clientX-drag.x,dy=e.clientY-drag.y;
   if(drag.touch&&!drag.moved&&Math.abs(dy)>Math.abs(dx))return; drag.moved=true;drag.x=e.clientX;drag.y=e.clientY;self.vy=-dx*0.006;self.vp=drag.touch?0:dy*0.004;self.yaw+=self.vy;self.pitch=clamp(self.pitch+self.vp,0.02,1.2);self.user()});
  function up(){drag=null}cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+ var pinch=null;function tdist(t){return Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY)}
+ cv.addEventListener('touchstart',function(e){if(e.touches.length==2){pinch={d:tdist(e.touches)};drag=null;self.user()}},{passive:true});
+ cv.addEventListener('touchmove',function(e){if(e.touches.length==2&&pinch){if(e.cancelable)e.preventDefault();var d=tdist(e.touches);if(d>4&&pinch.d>4){self.zoom(pinch.d/d);pinch.d=d}}},{passive:false});
+ cv.addEventListener('touchend',function(e){if(e.touches.length<2)pinch=null},{passive:true});cv.addEventListener('touchcancel',function(){pinch=null},{passive:true});
+ cv.addEventListener('gesturestart',function(e){e.preventDefault()});
  cv.addEventListener('wheel',function(e){if(!e.ctrlKey&&!e.metaKey){self.hint();return}e.preventDefault();self.zoom(e.deltaY>0?1.1:0.9)},{passive:false});
  cv.addEventListener('dblclick',function(){self.resetView()});
  root.querySelectorAll('[data-m3]').forEach(function(b){b.addEventListener('click',function(){var a=b.getAttribute('data-m3');
@@ -2262,7 +2267,7 @@ Viewer.prototype.centre=function(P,V){var S=this.cur,VP0=M4.mul(P,V),x0=1e9,x1=-
   if(ui&&ui.offsetHeight){u=ui.getBoundingClientRect();bot=Math.min(H,u.top-cr.top-10)}
   F=this._fr=[top,Math.max(top+40,bot)]}
  var yc=1-(F[0]+F[1])/H,fh=2*(F[1]-F[0])/H,need=Math.max((x1-x0)/1.86,(y1-y0)/(fh*0.94)),fz=this._fz||1,k=this._snap?1:0.06;
- this._fz=fz+(Math.max(1,fz*need)-fz)*(this._snap?0.5:0.05);
+ var uz=this.dist/(this.cur.cam.dist||this.dist);this._fz=fz+(Math.max(1,fz*need*uz)-fz)*(this._snap?0.5:0.05);
  var dx=-(x0+x1)/2,dy=yc-(y0+y1)/2;this._snap=0;
  this._sx=(this._sx||0)+(dx-(this._sx||0))*k;this._sy=(this._sy||0)+(dy-(this._sy||0))*k;P[8]=-this._sx;P[9]=-this._sy};
 /* pivots for pop-in: computed at build time from geometry bounds */
