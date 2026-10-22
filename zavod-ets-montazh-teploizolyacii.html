@@ -596,6 +596,8 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
 .mp-copy button.ok{background:#1E9E5A}
 .mp-ph{margin-top:14px;font-size:15px;font-weight:600;color:#6A7889}
 .mp-ph a{color:#0F1F35;font-weight:800;text-decoration:none}
+.mp .mp-pd{margin:14px 0 0;font-size:13px;line-height:1.5;font-weight:600;color:#6A7889}
+.mp-pd a{color:#1B62C4;font-weight:700}
 @media (max-width:480px){.mp-grid{grid-template-columns:1fr}.mp-box{padding:24px 20px 20px}}
 
 .dbar.stuck .dtab .chev{transition:opacity .25s ease,transform .25s ease,color .2s}
@@ -796,6 +798,7 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
 .foot .fb{max-width:32ch;font-size:14.5px;color:var(--body);margin-top:14px;font-weight:600;line-height:1.55}
 .fbot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 24px;padding-top:20px;font-size:14px;color:var(--steel);font-weight:600}
 .fbot a{color:var(--steel)}
+.flg{display:flex;flex-wrap:wrap;gap:4px 24px}
 
 /* responsive */
 @media (max-width:1280px){.h-nav{display:none}.menu-btn{display:flex}}
@@ -1491,7 +1494,7 @@ a.dtab:hover{color:var(--ink)}a.dtab[aria-current="page"]:hover{color:#fff;backg
 <div><h3>Контакты</h3><ul><li><a href="tel:+73512147785">8 (351) 214-77-85</a></li><li><a href="mailto:info@zavodets.ru">info@zavodets.ru</a></li><li><a href="zavod-ets-oprosnye-listy.html">Опросные листы</a></li></ul></div>
 <div><h3>Адрес</h3><p class="fa" style="margin-top:0">454008, Челябинская обл., г. Челябинск, Свердловский тракт, д. 7Б, пом. 4</p><p class="fa">ООО «Завод Электротехнических Систем»<br>ИНН 7448230730, ОГРН 1217400004095</p></div>
 </div>
-<div class="fbot"><span>© 2026 ООО «Завод ЭТС»</span><a href="#">Политика конфиденциальности</a></div>
+<div class="fbot"><span>© 2026 ООО «Завод ЭТС». Информация на сайте не является публичной офертой</span><span class="flg"><a href="zavod-ets-politika-konfidencialnosti.html">Политика конфиденциальности</a><a href="zavod-ets-soglasie.html">Согласие на обработку данных</a><a href="zavod-ets-politika-konfidencialnosti.html#cookie">Файлы cookie</a></span></div>
 </div>
 </footer>
 <script> /* mail chooser: every mailto link opens a choice of mail services (works without a mail program) */
@@ -1511,7 +1514,8 @@ a.dtab:hover{color:var(--ink)}a.dtab[aria-current="page"]:hover{color:#fff;backg
     links.map(function(l){return '<a href="'+l[3]+'" target="_blank" rel="noopener"><i style="background:'+l[1]+'">'+l[2]+'</i>'+l[0]+'</a>'}).join('')+
     '<a href="'+href+'" style="grid-column:1/-1"><i style="background:#0F2A5A">✉</i>Почтовая программа на компьютере</a></div>'+
     '<div class="mp-copy"><b>'+ADDR+'</b><button type="button">Скопировать адрес</button></div>'+
-    '<div class="mp-ph">Или позвоните: <a href="tel:+73512147785">8 (351) 214-77-85</a></div></div>';
+    '<div class="mp-ph">Или позвоните: <a href="tel:+73512147785">8 (351) 214-77-85</a></div>'+
+    '<p class="mp-pd">Отправляя письмо, вы даёте <a href="zavod-ets-soglasie.html">согласие на обработку персональных данных</a> в соответствии с <a href="zavod-ets-politika-konfidencialnosti.html">Политикой конфиденциальности</a>.</p></div>';
    document.body.appendChild(box);requestAnimationFrame(function(){box.classList.add('on')});
    box.addEventListener('click',function(ev){if(ev.target===box)close()});box.querySelector('.mp-x').addEventListener('click',close);
    box.querySelectorAll('.mp-grid a').forEach(function(a){a.addEventListener('click',function(){setTimeout(close,150)})});
@@ -1570,5 +1574,66 @@ document.addEventListener('click',function(ev){var a=ev.target.closest&&ev.targe
  addEventListener('resize',upd);upd();
 })();
 </script>
+<style>
+.ck{position:fixed;left:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:45;width:min(400px,calc(100vw - 40px));max-height:calc(100vh - 120px);overflow:auto;overscroll-behavior:contain;box-sizing:border-box;background:#fff;color:var(--ink,#0F1F35);border:1px solid var(--line,#DDE3EA);border-radius:14px;box-shadow:0 18px 50px rgba(15,31,53,.18);padding:18px 18px 16px;font:600 15px/1.55 var(--sans,'Nunito',Arial,sans-serif);opacity:0;transform:translateY(14px);transition:opacity .35s ease,transform .35s ease}
+.ck.on{opacity:1;transform:none}
+.ck.on.off{opacity:0;transform:translateY(14px);pointer-events:none;visibility:hidden;transition:opacity .35s ease,transform .35s ease,visibility 0s linear .35s}
+.ck p{margin:0;color:var(--body,#3B4A5E)}
+.ck-row{display:flex;gap:10px;margin-top:14px}
+.ck-b{min-height:44px;padding:0 22px;border-radius:8px;border:0;font:800 15px/1 var(--sans,'Nunito',Arial,sans-serif);cursor:pointer;transition:background-color .15s}
+.ck-ok{background:var(--blue,#1B62C4);color:#fff;min-width:96px}
+.ck-ok:hover{background:var(--navy,#12356E)}
+.ck-more{background:var(--bg,#EEF1F4);color:var(--ink,#0F1F35)}
+.ck-more:hover{background:var(--bg2,#E5EAEF)}
+.ck-b:focus-visible,.ck a:focus-visible{outline:3px solid var(--sky,#1B98E0);outline-offset:2px}
+.ck-d{display:none}
+.ck.open .ck-m{display:none}
+.ck.open .ck-d{display:block}
+.ck-d b{display:block;font-size:17px;font-weight:800;color:var(--ink,#0F1F35);margin-bottom:8px}
+.ck-d p{font-size:14.5px}
+.ck-d p+p{margin-top:8px}
+.ck-d a{color:var(--blue,#1B62C4);font-weight:800}
+@media (max-width:699px){
+ .ck{left:12px;right:12px;width:auto;bottom:calc(12px + env(safe-area-inset-bottom,0px));padding:16px;font-size:14.5px}
+ .ck-row .ck-b{flex:1;padding:0 12px}
+ html.ck-on .fab{bottom:calc(22px + env(safe-area-inset-bottom,0px) + var(--ckh,0px))}
+ .fab{transition:opacity .35s ease,transform .35s ease,bottom .3s ease}
+}
+@media print{.ck{display:none}}
+</style>
+<script>(function(){
+ var K='zets-cookie',Y=365*864e5,P='zavod-ets-politika-konfidencialnosti.html#cookie';
+ function get(){var v=0;try{v=+localStorage.getItem(K)||0}catch(e){}if(!v){var m=document.cookie.match(/(?:^|; )zets_cookie=(\d+)/);if(m)v=+m[1]}return v}
+ function set(){var t=Date.now();try{localStorage.setItem(K,String(t));if(+localStorage.getItem(K)===t)return}catch(e){}try{document.cookie='zets_cookie='+t+';max-age=31536000;path=/;SameSite=Lax'}catch(e){}}
+ var t=get();if(t&&Date.now()-t<Y)return;
+ function build(){
+  var el=document.createElement('div'),de=document.documentElement;
+  el.className='ck';el.setAttribute('role','region');el.setAttribute('aria-label','Уведомление о файлах cookie');
+  el.innerHTML='<div class="ck-m"><p>Сайт использует файлы cookie: небольшие служебные файлы, которые нужны для его корректной работы.</p>'+
+   '<div class="ck-row"><button type="button" class="ck-b ck-ok">ОК</button><button type="button" class="ck-b ck-more" aria-expanded="false">Подробнее</button></div></div>'+
+   '<div class="ck-d"><b>О файлах cookie</b>'+
+   '<p>Это небольшие текстовые файлы, которые сайт сохраняет в вашем браузере. Мы используем только технические: они нужны, чтобы страницы работали корректно и это сообщение не появлялось снова.</p>'+
+   '<p>Рекламные и аналитические файлы cookie сайт не использует, сведения о ваших посещениях третьим лицам не передаются.</p>'+
+   '<p>Удалить или запретить файлы cookie можно в настройках браузера. Подробнее в <a href="'+P+'">Политике конфиденциальности</a>.</p>'+
+   '<div class="ck-row"><button type="button" class="ck-b ck-ok ck-x">Закрыть</button></div></div>';
+  document.body.appendChild(el);
+  var av=document.querySelectorAll('.m3'),hid=false;
+  function fit(){de.style.setProperty('--ckh',(innerWidth<700&&!hid?el.offsetHeight+10:0)+'px')}
+  /* step aside while it would cover the buttons along the bottom of the 3D viewer; come back when they scroll away */
+  function chk(){if(!av.length||!el.parentNode)return;var r=el.getBoundingClientRect(),hit=false;
+   if(!el.classList.contains('open'))for(var i=0;i<av.length;i++){var q=av[i].getBoundingClientRect(),t=Math.max(q.top,q.bottom-180);if(q.bottom>r.top+8&&t<r.bottom-8&&q.right>r.left&&q.left<r.right){hit=true;break}}
+   if(hit!==hid){hid=hit;el.classList.toggle('off',hit);fit()}}
+  function onsc(){chk()}
+  function close(){set();el.classList.remove('on');de.classList.remove('ck-on');removeEventListener('resize',fit);removeEventListener('scroll',onsc);removeEventListener('resize',onsc);setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el)},400)}
+  el.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('a'))set();var b=e.target.closest&&e.target.closest('button');if(!b)return;
+   if(b.classList.contains('ck-more')){el.classList.add('open');b.setAttribute('aria-expanded','true');fit();try{el.querySelector('.ck-x').focus({preventScroll:true})}catch(x){}}
+   else if(b.classList.contains('ck-ok'))close()});
+  el.addEventListener('keydown',function(e){if(e.key==='Escape')close()});
+  addEventListener('resize',fit);if(av.length){addEventListener('scroll',onsc,{passive:true});addEventListener('resize',onsc)}
+  requestAnimationFrame(function(){requestAnimationFrame(function(){chk();el.classList.add('on');de.classList.add('ck-on');fit()})});
+ }
+ setTimeout(build,700);
+})();</script>
+
 </body>
 </html>
