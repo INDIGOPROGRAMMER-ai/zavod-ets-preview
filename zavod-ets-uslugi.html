@@ -749,14 +749,13 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
 .cli-h h2{font-size:clamp(28px,3vw,44px)}
 .cli-h p{font-size:16.5px;line-height:1.55;color:var(--body);max-width:56ch}
 .cli{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
-.cli li{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:4px;min-height:92px;padding:14px 10px;border-radius:var(--r);background:var(--bg);border:1px solid var(--line);transition:border-color .2s,background-color .2s,transform .2s}
-.cli li:hover{border-color:var(--sky);background:var(--skyl);transform:translateY(-2px)}
+.cli li{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:96px;padding:14px 12px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line);transition:border-color .2s,box-shadow .2s,transform .2s}
+.cli li:hover{border-color:var(--sky);box-shadow:0 10px 26px rgba(15,31,53,.08);transform:translateY(-2px)}
+.cli img{display:block;width:var(--w);max-width:100%;height:auto}
 .cli b{font-size:clamp(16px,1.35vw,20px);font-weight:800;color:var(--navy);letter-spacing:.01em;line-height:1.2}
-.cli span{font-size:13px;font-weight:600;color:var(--steel);line-height:1.3}
-.dp-sec.alt .cli li{background:var(--bg)}
 @media (max-width:1100px){.cli{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media (max-width:760px){.cli{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media (max-width:560px){.cli{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.cli li{min-height:54px;padding:8px}.cli b{font-size:15.5px}.cli span{display:none}.cli-h{margin-bottom:16px}.cli-h p{font-size:15px}}
+@media (max-width:560px){.cli{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.cli li{min-height:64px;padding:8px}.cli img{width:calc(var(--w) * .72)}.cli b{font-size:14px}.cli-h{margin-bottom:16px}.cli-h p{font-size:15px}}
 .ci i{flex-shrink:0;width:44px;height:44px;border-radius:12px;background:var(--skyl);color:var(--blue);display:flex;align-items:center;justify-content:center}
 .ci small{display:block;font-size:14px;font-weight:700;color:var(--steel);text-transform:uppercase;letter-spacing:.04em}
 .ci a{font-size:20px;font-weight:800;color:var(--ink);text-decoration:none}
