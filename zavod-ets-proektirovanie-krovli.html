@@ -794,7 +794,7 @@ h2{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
 .oc span{display:block;padding:18px 4px 0}
 .oc b{font-size:18px;font-weight:800;line-height:1.25;display:block}
 .oc small{display:block;font-size:15px;font-weight:600;color:var(--steel);margin-top:4px}
-.oc:hover b{color:var(--blue)}
+.oc:hover b{color:var(--blue)}.oc img{transition:transform .5s ease}.oc:hover img{transform:scale(1.04)}
 
 /* ask band */
 .ask{position:relative;background:var(--navy2);color:#fff;overflow:hidden}
@@ -1303,7 +1303,7 @@ a.dtab:hover{color:var(--ink)}a.dtab[aria-current="page"]:hover{color:#fff;backg
 .m3-info{display:flex;align-items:center;justify-content:space-between;gap:24px 56px;margin-top:clamp(30px,4vh,48px);margin-bottom:clamp(6px,1.4vh,18px)}
 .m3-info h3{margin:0 0 14px;font:800 28px/1.2 var(--sans);color:#fff}
 .m3-info .lead{margin:0;font-size:17px;line-height:1.6;color:rgba(255,255,255,.84);max-width:74ch}
-.m3-info .btn{flex:none}
+.m3-info .btn{flex:none}.m3-info h3:last-child{margin:0}
 @media (max-width:900px){.m3-info{flex-direction:column;align-items:flex-start}}
 @media (max-width:700px){.m3-info{margin-top:24px;margin-bottom:4px;gap:20px}.m3-info h3{font-size:22px}.m3-info .lead{font-size:15.5px}.m3-info .btn{align-self:stretch}}
 @media (max-height:1000px) and (min-width:901px){.m3-head{margin-bottom:14px}.m3-head .dp-h2{font-size:28px;margin-bottom:6px}.m3-head .dp-p{font-size:15.5px;max-width:80ch}.m3-tabs button{padding:9px 18px}}
@@ -1428,8 +1428,13 @@ a.dp-cc .cc-img img{transition:transform .5s}a.dp-cc:hover .cc-img img{transform
 .cc-more{display:inline-flex;align-items:center;gap:8px;margin-top:16px;font-style:normal;font-size:16px;font-weight:800;color:var(--blue)}
 .cc-more svg{transition:transform .2s}a.dp-cc:hover .cc-more svg{transform:translateX(3px)}
 .ab-txt .dp-p{color:var(--ink)}
+@media (min-width:1101px){.ab-txt .dp-p{font-size:18px;line-height:1.7;max-width:none}}
 .ab-dl{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);overflow:hidden}
 .dp-sec.alt .ab-dl{background:var(--bg)}
+.dp-2.ab-row{align-items:stretch}
+@media (min-width:901px){.ab-row .ab-txt{display:flex;flex-direction:column;justify-content:space-between}}
+.ab-dirs{display:flex;flex-direction:column}.ab-dirs .ab-dl{flex:1 1 auto}.ab-dl a{flex:1 1 auto}
+.ab-dirs h3{line-height:1.2}
 .ab-dl a{display:grid;grid-template-columns:60px minmax(0,1fr) 20px;gap:16px;align-items:center;padding:12px 18px 12px 12px;text-decoration:none;color:var(--ink);border-top:1px solid var(--line2);transition:background .2s}
 .ab-dl a:first-child{border-top:0}
 .ab-dl figure{width:60px;height:46px;border-radius:8px;overflow:hidden;background:#0B2743}
@@ -1440,6 +1445,22 @@ a.dp-cc .cc-img img{transition:transform .5s}a.dp-cc:hover .cc-img img{transform
 .ab-dl a:hover{background:var(--skyl);color:var(--ink)}.ab-dl a:hover b{color:var(--blue)}.ab-dl a:hover .chev{color:var(--blue);transform:translateX(3px)}
 @media (max-width:640px){.ab-dl a{grid-template-columns:48px minmax(0,1fr) 16px;gap:12px;padding:10px 12px 10px 10px}.ab-dl figure{width:48px;height:38px}.ab-dl b{font-size:15px}.ab-dl small{font-size:12.5px}}
 .dp-intro .dp-p{max-width:none}
+.dp-2.mid{align-items:center}
+.mz{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:32px 56px;align-items:center}
+.mz-t .dp-p{max-width:none}
+.mz-t>.dp-p,.dp-2.mid>div>.dp-p{font-size:18px;line-height:1.7;color:var(--ink)}
+@media (max-width:640px){.mz-t>.dp-p,.dp-2.mid>div>.dp-p{font-size:15.5px;line-height:1.6}}
+.dp-note{margin-top:22px;padding:18px 22px;border-radius:var(--r);background:var(--skyl);border-left:4px solid var(--blue)}
+.dp-note .dp-p{font-weight:700;color:var(--ink);font-size:16px}
+.svm-l{margin:0 0 12px;font-size:17px;font-weight:800;color:var(--ink)}
+.svm-list{display:flex;flex-direction:column;gap:12px}
+.svm{display:grid;grid-template-columns:120px minmax(0,1fr);gap:20px;align-items:center;padding:10px 20px 10px 10px;border-radius:var(--r);background:var(--bg);border:1px solid var(--line)}
+.svm figure{aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:var(--bg2)}
+.svm img{width:100%;height:100%;object-fit:cover}
+.svm h3{font-size:18px;line-height:1.25;font-weight:800;color:var(--ink)}
+.svm p{margin-top:5px;font-size:14.5px;font-weight:600;line-height:1.5;color:var(--body)}
+@media (max-width:1100px){.mz{grid-template-columns:1fr;gap:26px}}
+@media (max-width:640px){.svm{grid-template-columns:96px minmax(0,1fr);gap:12px;padding:8px 12px 8px 8px}.svm h3{font-size:15.5px}.svm p{font-size:13px;line-height:1.4;margin-top:3px}.dp-note{padding:14px 16px}.dp-note .dp-p{font-size:14.5px}}
 .dp-intro.dp-after{margin:22px 0 0;max-width:none;padding:18px 22px;border-radius:var(--r);background:var(--skyl);border-left:4px solid var(--blue)}
 .dp-intro.dp-after .dp-p{font-weight:700;color:var(--ink)}
 .dp-intro{max-width:80ch;margin-bottom:26px}
@@ -1600,7 +1621,7 @@ a.dp-cc .cc-img img{transition:transform .5s}a.dp-cc:hover .cc-img img{transform
  .m3-tabs button{padding:9px 16px;font-size:14px}
  .m3{flex-basis:400px}
  /* objects page */
- .dp-sec .ob-g{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 10px}
+ .dp-sec .ob-g{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
  .ob-i button{border-radius:12px}
  .ob-i figcaption{font-size:12.5px;margin-top:6px;line-height:1.35;overflow-wrap:break-word}
  .ob-f{contain:inline-size;min-width:0;flex-wrap:nowrap;overflow-x:auto;margin-inline:calc(-1 * var(--pad));padding:0 var(--pad) 6px;scrollbar-width:none}
@@ -1640,24 +1661,20 @@ a.dp-cc .cc-img img{transition:transform .5s}a.dp-cc:hover .cc-img img{transform
 <main>
 <section class="dp-hero"><div class="wrap dp-hg"><div><nav class="crumbs" aria-label="Навигация"><a href="index.html">Главная</a><span>/</span><a href="zavod-ets-napravleniya.html">Направления</a><span>/</span>Проектирование кровли</nav><h1 class="h1-2">Проектирование<small>электрообогрева кровли и водосточных систем</small></h1><p class="dp-lead">Разработка проектных решений систем электрообогрева кровли, водосточных систем и антиобледенения площадок. Индивидуальный подход при проектировании позволяет повысить эффективность системы обогрева и оптимизировать затраты.</p>
 <div class="dp-cta-b"><a class="btn btn-y" href="mailto:info@zavodets.ru?subject=%D0%97%D0%B0%D1%8F%D0%B2%D0%BA%D0%B0%3A%20%D0%9F%D1%80%D0%BE%D0%B5%D0%BA%D1%82%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5%20%D1%8D%D0%BB%D0%B5%D0%BA%D1%82%D1%80%D0%BE%D0%BE%D0%B1%D0%BE%D0%B3%D1%80%D0%B5%D0%B2%D0%B0%20%D0%BA%D1%80%D0%BE%D0%B2%D0%BB%D0%B8%20%D0%B8%20%D0%B2%D0%BE%D0%B4%D0%BE%D1%81%D1%82%D0%BE%D1%87%D0%BD%D1%8B%D1%85%20%D1%81%D0%B8%D1%81%D1%82%D0%B5%D0%BC&amp;body=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5%21%0A%0A%D0%9E%D0%B1%D1%8A%D0%B5%D0%BA%D1%82%20%D0%B8%20%D1%87%D1%82%D0%BE%20%D1%82%D1%80%D0%B5%D0%B1%D1%83%D0%B5%D1%82%D1%81%D1%8F%20%D0%BE%D0%B1%D0%BE%D0%B3%D1%80%D0%B5%D1%82%D1%8C%3A%0A%D0%9F%D1%80%D0%BE%D1%82%D1%8F%D0%B6%D1%91%D0%BD%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20/%20%D0%BE%D0%B1%D1%8A%D1%91%D0%BC%3A%0A%D0%A2%D1%80%D0%B5%D0%B1%D1%83%D0%B5%D0%BC%D0%B0%D1%8F%20%D1%82%D0%B5%D0%BC%D0%BF%D0%B5%D1%80%D0%B0%D1%82%D1%83%D1%80%D0%B0%3A%0A%D0%A1%D1%80%D0%BE%D0%BA%D0%B8%3A%0A%0A%D0%9A%D0%BE%D0%BD%D1%82%D0%B0%D0%BA%D1%82%D0%BD%D0%BE%D0%B5%20%D0%BB%D0%B8%D1%86%D0%BE%20%D0%B8%20%D1%82%D0%B5%D0%BB%D0%B5%D1%84%D0%BE%D0%BD%3A%0A%0A%D0%97%D0%B0%D0%BF%D0%BE%D0%BB%D0%BD%D0%B5%D0%BD%D0%BD%D1%8B%D0%B9%20%D0%BE%D0%BF%D1%80%D0%BE%D1%81%D0%BD%D1%8B%D0%B9%20%D0%BB%D0%B8%D1%81%D1%82%20%D0%B8%D0%BB%D0%B8%20%D0%A2%D0%97%20%D0%BC%D0%BE%D0%B6%D0%BD%D0%BE%20%D0%BF%D1%80%D0%B8%D0%BB%D0%BE%D0%B6%D0%B8%D1%82%D1%8C%20%D0%BA%20%D0%BF%D0%B8%D1%81%D1%8C%D0%BC%D1%83.">Оставить заявку</a><a class="btn-o2" href="https://zavodets.ru/wp-content/uploads/2021/08/Obogrev-vodostochnoj-sistemy-i-krovli.pdf" target="_blank" rel="noopener">Опросный лист</a></div></div>
-<figure class="dp-hero-f fit"><img src="foto/m/shema-antiobledeneniya.jpg" alt="Принципиальная схема системы антиобледенения кровли и водостоков"></figure></div><div class="wrap"><div class="dp-toc"><span>На этой странице:</span><nav aria-label="Разделы страницы"><a href="#s1">Зачем нужна<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a><a href="#s2">Что проектируем<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a><a href="#s3">Как работает<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a><a href="#s4">Как проектируем<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a><a href="#s5">Задачи отдела<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a></nav></div></div></section><section id="s1" class="dp-sec alt"><div class="wrap dp-2"><div><h2 class="dp-h2">Зачем нужна система</h2>
-<p class="dp-p">Зимой и в межсезонье снег на кровле подтаивает от тепла здания и солнца, а талая вода снова замерзает на холодном карнизе, в желобах и водосточных трубах. Так нарастают наледь и сосульки.</p>
-<p class="dp-p">Лёд забивает водосток, деформирует желоба, повреждает кровлю и фасад, а его падение опасно для людей, транспорта и оборудования.</p></div>
-<ul class="dp-check"><li>Нет наледи и сосулек над входами, проездами и тротуарами</li><li>Водосток остаётся открытым: талая вода уходит в ливневую канализацию</li><li>Желоба, воронки и кровельное покрытие не разрушаются льдом</li><li>Меньше ручной очистки кровли от снега и льда</li></ul></div></section>
-<section id="s2" class="dp-sec"><div class="wrap dp-2"><div><h2 class="dp-h2">Что проектируем</h2><p class="dp-p">Систему подбираем под конструкцию кровли и тип водостока: скатные и плоские кровли, наружный и внутренний водосток, промышленные и гражданские здания.</p></div>
-<ul class="dp-check"><li>Карнизные свесы и ендовы</li><li>Водосточные желоба и воронки</li><li>Наружные и внутренние водосточные трубы</li><li>Воронки и лотки плоских кровель</li><li>Открытые площадки, ступени и пандусы</li></ul></div></section>
-<section id="s3" class="dp-sec"><div class="wrap"><div class="dp-hl"><div><h2 class="dp-h2">Как работает система</h2>
-<p class="dp-p">Греющий кабель укладывают по карнизному свесу, в желобах, воронках и водосточных трубах: по всему пути талой воды до ливневой канализации или незамерзающей зоны.</p>
-<p class="dp-p">Система работает автоматически. Шкаф управления включает обогрев по датчикам температуры, осадков и воды в водостоке только тогда, когда может образоваться лёд. В сильный мороз талой воды нет, и система не расходует электроэнергию впустую.</p></div>
-<div class="dp-facts"><div class="dp-fact"><b>−10…+5 °C</b><span>рабочий диапазон температур системы</span></div><div class="dp-fact"><b>Авто</b><span>управление по датчикам температуры, осадков и воды</span></div><div class="dp-fact"><b>ЭТС ШУО</b><span>шкафы управления собственного производства</span></div><div class="dp-fact"><b>Расчёт</b><span>мощность кабеля под климат района и тип кровли</span></div></div></div></div></section>
-<section id="s4" class="dp-sec alt"><div class="wrap dp-2"><div><h2 class="dp-h2">Как мы проектируем</h2>
+<figure class="dp-hero-f fit"><img src="foto/m/shema-antiobledeneniya.jpg" alt="Принципиальная схема системы антиобледенения кровли и водостоков"></figure></div><div class="wrap"><div class="dp-toc"><span>На этой странице:</span><nav aria-label="Разделы страницы"><a href="#s1">Что проектируем<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a><a href="#s2">Как работает<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a><a href="#s3">Задачи отдела<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a></nav></div></div></section><section class="dp-sec alt"><div class="wrap dp-2 mid"><div>
 <p class="dp-p">Проектные решения разрабатываем по техническому заданию Заказчика с учётом конструкции кровли, типа водостока и климата района строительства, в тесном взаимодействии с его техническими службами.</p>
 <p class="dp-p">Решения принимаем в соответствии с СП 17.13330 «Кровли», ПУЭ и рекомендациями по применению противообледенительных устройств на кровлях. Результат: комплект рабочей документации, по которому система монтируется, комплектуется и вводится в эксплуатацию.</p></div>
 <ul class="dp-check"><li>Теплотехнические и электротехнические расчёты</li><li>Принципиальные схемы</li><li>Системы управления, интеграция с АСУ ТП</li><li>Индивидуальный подход к разработке узлов крепления</li><li>Раскладка кабеля по кровле, желобам и водостокам</li><li>Подбор оборудования и материалов в соответствии с проектом</li><li>Визуализация проекта</li></ul></div></section>
-<section id="s5" class="dp-sec"><div class="wrap"><h2 class="dp-h2">Задачи, которые решает проектно-конструкторский отдел</h2><div class="dp-tasks">
+<section id="s1" class="dp-sec"><div class="wrap dp-2"><div><h2 class="dp-h2">Что проектируем</h2><p class="dp-p">Систему подбираем под конструкцию кровли и тип водостока: скатные и плоские кровли, наружный и внутренний водосток, промышленные и гражданские здания.</p></div>
+<ul class="dp-check"><li>Карнизные свесы и ендовы</li><li>Водосточные желоба и воронки</li><li>Наружные и внутренние водосточные трубы</li><li>Воронки и лотки плоских кровель</li><li>Открытые площадки, ступени и пандусы</li></ul></div></section>
+<section id="s2" class="dp-sec"><div class="wrap"><div class="dp-hl"><div><h2 class="dp-h2">Как работает система</h2>
+<p class="dp-p">Греющий кабель укладывают по карнизному свесу, в желобах, воронках и водосточных трубах: по всему пути талой воды до ливневой канализации или незамерзающей зоны.</p>
+<p class="dp-p">Система работает автоматически. Шкаф управления включает обогрев по датчикам температуры, осадков и воды в водостоке только тогда, когда может образоваться лёд. В сильный мороз талой воды нет, и система не расходует электроэнергию впустую.</p></div>
+<div class="dp-facts"><div class="dp-fact"><b>−10…+5 °C</b><span>рабочий диапазон температур системы</span></div><div class="dp-fact"><b>Авто</b><span>управление по датчикам температуры, осадков и воды</span></div><div class="dp-fact"><b>ЭТС ШУО</b><span>шкафы управления собственного производства</span></div><div class="dp-fact"><b>Расчёт</b><span>мощность кабеля под климат района и тип кровли</span></div></div></div></div></section>
+<section id="s3" class="dp-sec alt"><div class="wrap"><h2 class="dp-h2">Задачи, которые решает проектно-конструкторский отдел</h2><div class="dp-tasks">
 <div class="dp-task">Теплотехнические<small>теплопотери, мощность обогрева</small></div><div class="dp-task">Электротехнические<small>питание, защита, управление</small></div>
 <div class="dp-task">Технологические<small>режимы работы и алгоритмы управления</small></div><div class="dp-task">Конструкторские<small>раскладка и крепление кабеля</small></div></div></div></section>
-<section class="dp-sec alt"><div class="wrap"><h2 class="dp-h2">С чего начать</h2><p class="dp-p">Для проектирования системы антиобледенения и предварительного расчёта направьте нам заполненный опросный лист.</p>
+<section class="dp-sec"><div class="wrap"><h2 class="dp-h2">С чего начать</h2><p class="dp-p">Для проектирования системы антиобледенения и предварительного расчёта направьте нам заполненный опросный лист.</p>
 <div class="dp-q"><a href="https://zavodets.ru/wp-content/uploads/2021/08/Obogrev-vodostochnoj-sistemy-i-krovli.pdf" target="_blank" rel="noopener"><i>PDF</i>Обогрев кровли и водостоков</a></div>
 <div class="dp-steps" style="margin-top:28px">
 <div class="dp-step"><b>Опросный лист</b><span>Присылаете заполненный опросный лист, чертежи кровли или техническое задание.</span></div>
