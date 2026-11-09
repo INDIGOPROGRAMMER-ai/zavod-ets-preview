@@ -2786,7 +2786,14 @@ function pageName(p){return PAGES[p]||p}
 var SD0=null;
 function applyAll(){
  $$('[data-z]').forEach(function(e){if(isInt(e))e.classList.add('ze-int')});
- Object.keys(D.edits).forEach(function(k){var x=D.edits[k];if(x.p!==PAGE)return;var e=$('[data-z="'+x.z+'"]');if(!e){x.miss=1;return}delete x.miss;e.innerHTML=cleanHTML(x.h);e.classList.add('ze-ed')});
+ var moved=0;
+ Object.keys(D.edits).forEach(function(k){var x=D.edits[k];if(x.p!==PAGE)return;var e=$('[data-z="'+x.z+'"]');
+  /* страницы могли пересобраться: проверяем по исходному тексту и при необходимости ищем элемент заново */
+  if(!e||norm(txt(e))!==norm(x.o)){e=null;var c=$$('[data-z]').filter(function(a){return norm(txt(a))===norm(x.o)});
+   e=c.filter(function(a){return ctxOf(a)===x.ctx&&(!x.tg||a.tagName===x.tg)})[0]||c.filter(function(a){return !x.tg||a.tagName===x.tg})[0]||c[0]||null;
+   if(e){var nz=e.getAttribute('data-z');delete D.edits[k];x.z=nz;D.edits[PAGE+'|'+nz]=x;moved++}}
+  if(!e){x.miss=1;return}delete x.miss;e.__zo={t:x.o,h:x.oh};e.innerHTML=cleanHTML(x.h);e.classList.add('ze-ed')});
+ if(moved)save();
  Object.keys(D.blocks).forEach(function(k){var x=D.blocks[k];if(x.p===PAGE)markBlock($('[data-zb="'+x.b+'"]'),true)});
  Object.keys(D.imgs).forEach(function(k){var x=D.imgs[k];if(x.p===PAGE){var i=$('img[data-zi="'+x.i+'"]');if(i)i.classList.add('ze-imgdel')}});
  Object.keys(D.notes).forEach(function(k){var x=D.notes[k];if(x.p===PAGE)renderNote($('[data-zb="'+x.b+'"]'),x)});
@@ -2795,7 +2802,7 @@ function applyAll(){
 /* шаги «Процесс реализации» на главной: текст берётся из window.ZETS_SD */
 function steps(){
  var SD=window.ZETS_SD;if(!SD)return;if(!SD0)SD0=JSON.parse(JSON.stringify(SD));
- $$('.thread li').forEach(function(li,i){var b=li.querySelector('[data-z]');if(b)SD[i][0]=txt(b)||SD0[i][0]});
+ $$('.thread li').forEach(function(li,i){var b=li.querySelector('b');if(b)SD[i][0]=txt(b)||SD0[i][0]});
  Object.keys(D.steps).forEach(function(k){var x=D.steps[k];if(SD[x.i])SD[x.i][1]=x.t});
  if(window.ZETS_SHOW)window.ZETS_SHOW(window.ZETS_SI||0);
 }
@@ -2838,8 +2845,8 @@ function commit(e){
  var z=e.getAttribute('data-z'),k=PAGE+'|'+z,o=e.__zo||{t:txt(e),h:e.innerHTML},t=txt(e);
  if(t==='')e.innerHTML='';
  if(norm(t)===norm(o.t)){delete D.edits[k];e.classList.remove('ze-ed')}
- else{var old=D.edits[k];D.edits[k]={p:PAGE,z:z,o:o.t,oh:o.h,t:t,h:cleanHTML(e.innerHTML),ctx:ctxOf(e),ts:Date.now()};e.classList.add('ze-ed')}
- var li=e.closest('.thread li');if(li&&window.ZETS_SD){var i2=$$('.thread li').indexOf(li);if(i2>=0){window.ZETS_SD[i2][0]=t||(SD0?SD0[i2][0]:'');if((window.ZETS_SI||0)===i2&&window.ZETS_SHOW)window.ZETS_SHOW(i2)}}
+ else{var old=D.edits[k];D.edits[k]={p:PAGE,z:z,tg:e.tagName,o:o.t,oh:o.h,t:t,h:cleanHTML(e.innerHTML),ctx:ctxOf(e),ts:Date.now()};e.classList.add('ze-ed')}
+ var li=e.closest('.thread li');if(li&&e.tagName==='B'&&window.ZETS_SD){var i2=$$('.thread li').indexOf(li);if(i2>=0){window.ZETS_SD[i2][0]=t||(SD0?SD0[i2][0]:'');if((window.ZETS_SI||0)===i2&&window.ZETS_SHOW)window.ZETS_SHOW(i2)}}
  save();
 }
 function caretAt(x,y){var r;if(document.caretRangeFromPoint)r=document.caretRangeFromPoint(x,y);else if(document.caretPositionFromPoint){var p=document.caretPositionFromPoint(x,y);if(p){r=document.createRange();r.setStart(p.offsetNode,p.offset)}}if(r){var s=getSelection();s.removeAllRanges();s.addRange(r)}}
