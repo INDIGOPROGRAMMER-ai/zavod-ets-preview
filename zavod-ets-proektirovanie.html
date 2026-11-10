@@ -1809,8 +1809,9 @@ function Renderer(canvas){
   /* no index buffers at all: every triangle gets its own three vertices and is drawn with drawArrays, and every buffer ends
      with spare vertices that are never drawn. On some Windows GPUs indexed drawing picked wrong vertices (the last one of a
      buffer read as the origin, or a vertex of the neighbouring box), which drew huge triangles and flaps across the scene */
-  var ni=g.i.length,tot=ni+12,P=new Float32Array(tot*3),N=new Float32Array(tot*3),UV=new Float32Array(tot*2),k,v;
-  for(k=0;k<ni;k++){v=g.i[k];P[k*3]=g.p[v*3];P[k*3+1]=g.p[v*3+1];P[k*3+2]=g.p[v*3+2];N[k*3]=g.n[v*3];N[k*3+1]=g.n[v*3+1];N[k*3+2]=g.n[v*3+2];UV[k*2]=g.u[v*2];UV[k*2+1]=g.u[v*2+1]}
+  var I=[],q;for(q=0;q<g.i.length;q+=3){var A=g.i[q]*3,B=g.i[q+1]*3,C=g.i[q+2]*3,ux=g.p[B]-g.p[A],uy=g.p[B+1]-g.p[A+1],uz=g.p[B+2]-g.p[A+2],vx=g.p[C]-g.p[A],vy=g.p[C+1]-g.p[A+1],vz=g.p[C+2]-g.p[A+2],cx=uy*vz-uz*vy,cy=uz*vx-ux*vz,cz=ux*vy-uy*vx;if(cx*cx+cy*cy+cz*cz>1e-16)I.push(g.i[q],g.i[q+1],g.i[q+2])}
+  g={p:g.p,n:g.n,u:g.u,i:I,len:g.len};var ni=g.i.length,tot=ni+12,P=new Float32Array(tot*3),N=new Float32Array(tot*3),UV=new Float32Array(tot*2),k,v;
+  for(k=0;k<ni;k++){v=g.i[k];P[k*3]=g.p[v*3];P[k*3+1]=g.p[v*3+1];P[k*3+2]=g.p[v*3+2];var nx=g.n[v*3],ny=g.n[v*3+1],nz=g.n[v*3+2];if(!(nx*nx+ny*ny+nz*nz>1e-10)){nx=0;ny=1;nz=0}N[k*3]=nx;N[k*3+1]=ny;N[k*3+2]=nz;UV[k*2]=g.u[v*2];UV[k*2+1]=g.u[v*2+1]}
   for(k=ni;k<tot;k++){P[k*3]=P[0];P[k*3+1]=P[1];P[k*3+2]=P[2];N[k*3+1]=1;UV[k*2]=2}
   o.p=buf(gl.ARRAY_BUFFER,P);o.n=buf(gl.ARRAY_BUFFER,N);o.u=buf(gl.ARRAY_BUFFER,UV);o.cnt=ni;o.len=g.len||1;return o}
  function texture(src,cb){var t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([200,200,200,255]));
@@ -1822,7 +1823,7 @@ function Renderer(canvas){
  function draw(list,VP,cam,time){
   gl.viewport(0,0,canvas.width,canvas.height);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
   gl.uniformMatrix4fv(U.uVP,false,VP);gl.uniform3fv(U.uCam,cam);gl.uniform1f(U.uTime,time);
-  var op=[],tr=[];list.forEach(function(o){if(!o.visible||o.alpha<=0.003)return;(o.alpha<0.999||(o.blend&&!o.op)?tr:op).push(o)});
+  var op=[],tr=[];list.forEach(function(o){if(!o.visible||o.hid||o.hx||o.alpha<=0.003)return;(o.alpha<0.999||(o.blend&&!o.op)?tr:op).push(o)});
   tr.forEach(function(o){o._d=len(sub(o.center||[o.pos[0],o.pos[1],o.pos[2]],cam))});tr.sort(function(a,b){return b._d-a._d});
   op.sort(function(a,b){return(a.fade?1:0)-(b.fade?1:0)});gl.disable(gl.BLEND);gl.depthMask(true);op.forEach(function(o){if(o.fade&&!o.op){gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);one(o);gl.disable(gl.CULL_FACE)}else one(o)});
   gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
@@ -1882,7 +1883,7 @@ function Scene(R){this.R=R;this.list=[];this.labels=[];this.steps=[];this.byKey=
 Scene.prototype.add=function(key,g,mat,opt){opt=opt||{};wind(g);var o={key:key,buf:this.R.upload(g),color:mat.color,metal:mat.metal,rough:mat.rough,emis:mat.emis,alpha:opt.alpha===undefined?1:opt.alpha,
  base:{alpha:opt.alpha===undefined?1:opt.alpha},pos:opt.pos||[0,0,0],rot:opt.rot||[0,0,0],scl:opt.scl||[1,1,1],visible:opt.visible!==false,tex:opt.tex,twoPass:opt.twoPass,blend:opt.blend,
  texA:opt.texA,unlit:opt.unlit,center:opt.center,group:opt.group||'base',prog:opt.prog,anchor:opt.anchor};
- o.fade=opt.fade;o.fit=opt.fit;o.op=opt.group=='ins';o.p0=o.pos.slice();this.list.push(o);(this.byKey[key]=this.byKey[key]||[]).push(o);return o};
+ o.fade=opt.fade;o.fit=opt.fit;o.op=opt.group=='ins';o.uc=['pfs','tpfs','tape','strip','endseal'].indexOf(key)>=0;o.full=opt.full;o.half=opt.half;o.p0=o.pos.slice();this.list.push(o);(this.byKey[key]=this.byKey[key]||[]).push(o);return o};
 Scene.prototype.ground=function(r,cx,cz,shR){var g=disc(G(),r,0,64);this.add('floor',g,MAT.ground,{tex:this.R.canvasTex(floorCanvas()),texA:true,unlit:true,blend:true,pos:[cx||0,-0.002,cz||0],center:[0,-50,0]});
  var s=disc(G(),shR||r*.55,0.001,48);this.add('shadow',s,{color:[1,1,1],metal:0,rough:1},{tex:this.R.canvasTex(shadowCanvas()),texA:true,unlit:true,blend:true,pos:[cx||0,0,cz||0],scl:[1.6,1,0.7],center:[0,-49,0]})};
 
@@ -2087,17 +2088,19 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,MM=KS,PR=54*MM,TX=-1.0,X0=TX-1450
  S.add('ccable',corr(G(),cc,0.027,0.026),MAT.hose,{group:'heat',prog:0});
  /* insulation (his: 25 mm, Ø158) and cladding in two halves each, so they can be pulled apart; the flanged joints are left
     open under removable jackets, the box legs go through */
- var RI=PR+25*MM,RK=RI+0.006,JH=110*MM,JR=150*MM,IO=80*MM;
+ var RI=PR+25*MM,RK=RI+0.01,JH=110*MM,JR=150*MM,IO=80*MM;
  var OV=0.05;/* the halves overlap a little at the seams, so no crack ever shows the layer below */
- function hS(key,r,x0,x1,top,mat,far){var g=hArc(Y,r,x0,x1,(top?-Math.PI/2:Math.PI/2)-OV,(top?Math.PI/2:Math.PI*1.5)+OV,50);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[(x0+x1)/2,Y+(top?.2:-.2),0],fade:far?FADE:undefined,fit:far?LONG.fit:undefined})}
- function zS(key,r,z0,z1,top,mat){var g=yToZ(cyl(G(),r,z0,z1,42,(top?0:Math.PI)-OV,(top?Math.PI:Math.PI*2)+OV));moveG(g,TX,Y,0);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[TX,Y+(top?.2:-.2),(z0+z1)/2]})}
+ function hS(key,r,x0,x1,top,mat,far){if(!top)r+=0.0015;var g=hArc(Y,r,x0,x1,(top?-Math.PI/2:Math.PI/2)-OV,(top?Math.PI/2:Math.PI*1.5)+OV,50);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,half:true,center:[(x0+x1)/2,Y+(top?.2:-.2),0],fade:far?FADE:undefined,fit:far?LONG.fit:undefined});
+  if(top)S.add(key.slice(0,-1)+'F',hArc(Y,r,x0,x1,0,Math.PI*2,96),mat,{group:'ins',alpha:0,blend:true,twoPass:true,full:true,center:[(x0+x1)/2,Y,0],fade:far?FADE:undefined,fit:far?LONG.fit:undefined})}
+ function zS(key,r,z0,z1,top,mat){if(!top)r+=0.0015;var g=yToZ(cyl(G(),r,z0,z1,42,(top?0:Math.PI)-OV,(top?Math.PI:Math.PI*2)+OV));moveG(g,TX,Y,0);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,half:true,center:[TX,Y+(top?.2:-.2),(z0+z1)/2]});
+  if(top){var gf=yToZ(cyl(G(),r,z0,z1,84,0,Math.PI*2));moveG(gf,TX,Y,0);S.add(key.slice(0,-1)+'F',gf,mat,{group:'ins',alpha:0,blend:true,twoPass:true,full:true,center:[TX,Y,(z0+z1)/2]})}}
  [[X(-12790),C2-IO],[C2+IO,C1-IO],[C1+IO,X(6909.5)]].forEach(function(s){var n=Math.max(1,Math.ceil((s[1]-s[0])/3));for(var j=0;j<n;j++){var a=s[0]+(s[1]-s[0])*j/n,b=s[0]+(s[1]-s[0])*(j+1)/n;
   hS('insT',RI,a,b,true,MAT.insul,1);hS('insB',RI,a,b,false,MAT.insul,1);hS('cladT',RK,a,b,true,MAT.clad,1);hS('cladB',RK,a,b,false,MAT.clad,1)}});
  /* the cladding is made of sheets about 1 m long; a band covers every joint */
  var bt=G(),bb=G();[[X(-12790),C2-IO],[C2+IO,C1-IO],[C1+IO,X(6909.5)]].forEach(function(s){var n=Math.max(1,Math.round((s[1]-s[0])/(1000*MM)));
   for(var j=0;j<=n;j++){var x=Math.min(Math.max(s[0]+(s[1]-s[0])*j/n,s[0]+0.03),s[1]-0.03);merge(bt,hArc(Y,RK+0.0035,x-0.02,x+0.02,-Math.PI/2,Math.PI/2,48));merge(bb,hArc(Y,RK+0.0035,x-0.02,x+0.02,Math.PI/2,Math.PI*1.5,48))}});
  S.add('cladT',bt,MAT.steel,{group:'ins',alpha:0,blend:true,twoPass:true,center:[0,Y+.2,0],fade:FADE,fit:LONG.fit});S.add('cladB',bb,MAT.steel,{group:'ins',alpha:0,blend:true,twoPass:true,center:[0,Y-.2,0],fade:FADE,fit:LONG.fit});
- var zb0=-BJ*MM+IO,zb1=-RI*0.55;zS('insT',RI,zb0,zb1,true,MAT.insul);zS('insB',RI,zb0,zb1,false,MAT.insul);zS('cladT',RK,zb0,zb1,true,MAT.clad);zS('cladB',RK,zb0,zb1,false,MAT.clad);
+ var zb0=-BJ*MM+IO,zb1=0.02;zS('insT',RI,zb0,zb1,true,MAT.insul);zS('insB',RI,zb0,zb1,false,MAT.insul);zS('cladT',RK,zb0,zb1,true,MAT.clad);zS('cladB',RK,zb0,zb1,false,MAT.clad);
  /* removable jackets: a drum over each flanged joint, a cap over the blind flange of the branch */
  function jacket(c,ax,cap){var o=G(),a0=cap?-JH:-JH,a1=cap?(1.2+23+20)*MM:JH;
   merge(o,lathe(cap?[[a0/MM,RK/MM+1],[a0/MM,JR/MM],[a1/MM,JR/MM],[a1/MM,0]]:[[a0/MM,RK/MM+1],[a0/MM,JR/MM],[a1/MM,JR/MM],[a1/MM,RK/MM+1]],c,ax,48));
@@ -2120,7 +2123,7 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,MM=KS,PR=54*MM,TX=-1.0,X0=TX-1450
 
 /* --- vertical tank on legs --- */
 function buildTank(R,data,ST){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,DEG=Math.PI/180,k,LEGS=[];
- S.cam={target:[0.9,3.55,0.5],dist:17.6,yaw:-0.5,pitch:0.18,min:8,max:28,fitV:0.79,exz:1};
+ S.cam={target:[0.9,3.55,0.5],dist:17.6,yaw:-0.5,pitch:0.18,min:8,max:28,fitV:0.79,exz:1.0,exy:0.9};
  S.ground(8,0.8,0,4.6);
  function dec(b,T){var s=atob(b),a=new Uint8Array(s.length);for(var k=0;k<s.length;k++)a[k]=s.charCodeAt(k);return new T(a.buffer)}
  /* the stock outlet stub and its valve are replaced by a proper flanged outlet below */
@@ -2299,10 +2302,12 @@ function buildTank(R,data,ST){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,
  S.add('pcable',corr(G(),pc,HR,0.032),MAT.hose,{group:'heat',prog:0});
  S.add('ccable',corr(G(),cc,0.029,0.028),MAT.hose,{group:'heat',prog:0});
  /* insulation + cladding (two halves that slide apart), valve jacket, pipe insulation, insulated pipe support */
- function vshell(key,r,mat,first){[first,-first].forEach(function(sd){var a0=sd>0?-Math.PI/2:Math.PI/2,g=cyl(G(),r,Y0,Y1,42,a0-0.05,a0+Math.PI+0.05);var o=S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[sd*0.6,4,0]});o.sd=sd})}
- vshell('insT',RS+0.208,MAT.insul,-1);vshell('cladT',RS+0.223,MAT.clad,1);
+ function vshell(key,r,mat,first){[first,-first].forEach(function(sd){var a0=sd>0?-Math.PI/2:Math.PI/2,g=cyl(G(),r+(sd<0?0.0015:0),Y0,Y1,42,a0-0.05,a0+Math.PI+0.05);var o=S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,half:true,center:[sd*0.6,4,0]});o.sd=sd});
+  S.add(key.slice(0,-1)+'F',cyl(G(),r,Y0,Y1,84,0,Math.PI*2),mat,{group:'ins',alpha:0,blend:true,twoPass:true,full:true,center:[0,4,0]})}
+ vshell('insT',RS+0.195,MAT.insul,-1);vshell('cladT',RS+0.223,MAT.clad,1);
  [1,-1].forEach(function(sd){var a0=sd>0?-Math.PI/2:Math.PI/2,g=G();ann(g,RS-0.004,RS+0.223,Y1,a0-0.05,a0+Math.PI+0.05,42,1);ann(g,RS-0.004,RS+0.223,Y0,a0-0.05,a0+Math.PI+0.05,42,-1);
-  var o=S.add('cladT',g,MAT.clad,{group:'ins',alpha:0,blend:true,twoPass:true,center:[sd*0.6,4,0]});o.sd=sd});
+  var o=S.add('cladT',g,MAT.clad,{group:'ins',alpha:0,blend:true,twoPass:true,half:true,center:[sd*0.6,4,0]});o.sd=sd});
+ var rf=G();ann(rf,RS-0.004,RS+0.223,Y1,0,Math.PI*2,84,1);ann(rf,RS-0.004,RS+0.223,Y0,0,Math.PI*2,84,-1);S.add('cladTF',rf,MAT.clad,{group:'ins',alpha:0,blend:true,twoPass:true,full:true,center:[0,4,0]});
  [1,-1].forEach(function(sd){var a0=sd>0?-Math.PI/2:Math.PI/2,g=G();for(var y=Y0+0.95;y<Y1-0.3;y+=1.1)merge(g,cyl(G(),RS+0.2265,y-0.014,y+0.014,40,a0,a0+Math.PI));var o=S.add('cladT',g,MAT.steel,{group:'ins',alpha:0,blend:true,twoPass:true,center:[sd*0.6,4,0]});o.sd=sd});
  var J0=1.12,J1=VXo+0.31,JR=0.3,jk=yToX(cyl(G(),JR,J0,J1,40,0,Math.PI*2));
  [[J0,-1],[J1,1]].forEach(function(e){var b=jk.p.length/3;for(var k=0;k<=40;k++){var a=k/40*Math.PI*2,ca=Math.cos(a),sa=Math.sin(a);pushV(jk,[e[0],ca*(PR+0.075),sa*(PR+0.075)],[e[1],0,0],[k/40,0]);pushV(jk,[e[0],ca*JR,sa*JR],[e[1],0,0],[k/40,1])}
@@ -2313,7 +2318,7 @@ function buildTank(R,data,ST){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,
  var si=G();box(si,0.3,0.2,0.3,PS,OY-0.2,0);S.add('insB',si,MAT.insul,{group:'ins',alpha:0,blend:true,twoPass:true,center:[PS,OY-0.2,0]});
  var sc=G();box(sc,0.32,0.22,0.32,PS,OY-0.205,0);box(sc,0.14,0.012,0.14,PS,OY-0.318,0);S.add('cladB',sc,MAT.clad,{group:'ins',alpha:0,blend:true,twoPass:true,center:[PS,OY-0.2,0]});
  S.layers={ins:1,clad:1,jacket:1};
- S.explode=function(o,e){if(o.key=='cladT')o.pos=[o.sd*2.7*e,0,0];else if(o.key=='insT')o.pos=[o.sd*1.35*e,0,0];else if(o.key=='cladB')o.pos=[0,0,1.0*e];else if(o.key=='insB')o.pos=[0,0,0.5*e];else if(o.key=='jacket')o.pos=[0,0,0.8*e]};
+ S.explode=function(o,e){if(o.key=='cladT')o.pos=[o.sd*3.7*e,1.6*e,0];else if(o.key=='insT')o.pos=[o.sd*2.05*e,1.6*e,0];else if(o.key=='cladB')o.pos=[0,0.95*e,0];else if(o.key=='insB')o.pos=[0,0.5*e,0];else if(o.key=='jacket')o.pos=[0,0.55*e,0]};
  var lid=KP(0,0,90);
  S.labels=[
   {k:'cable',t:'Нагревательный модуль',p:TP(125,yT[5]),n:[Math.cos(125*DEG),0,Math.sin(125*DEG)],step:2,side:'l',dy:40,cl:'ins'},
@@ -2325,7 +2330,7 @@ function buildTank(R,data,ST){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,
   {k:'endseal',t:'Концевая заделка',p:[END+0.04,ycn,zc],n:[0,.5,1],step:3,dy:40,cl:'ins'},
   {k:'cab',t:'Шкаф управления ЭТС ШУО',p:[CX,CB.top+0.04,CZ],n:[0,.3,1],step:1,dy:-34},
   {k:'jacket',t:'Термочехол на задвижке',p:[VXo,OY+0.3,0.1],n:[0,.6,.8],step:5,mv:true},
-  {k:'insT',t:'Теплоизоляция',p:[-0.6,5.4,Math.sqrt(Math.pow(RS+0.208,2)-0.36)],n:[-.5,0,.85],step:4,mv:true,cl:'clad',side:'l'},
+  {k:'insT',t:'Теплоизоляция',p:[-0.6,5.4,Math.sqrt(Math.pow(RS+0.195,2)-0.36)],n:[-.5,0,.85],step:4,mv:true,cl:'clad',side:'l'},
   {k:'cladT',t:'Защитный кожух',p:[0.75,6.4,Math.sqrt(Math.pow(RS+0.223,2)-0.5625)],n:[.6,0,.8],step:5,mv:true}];
  if(ST)S.labels.push({k:'stand',t:'Стойка из швеллера',p:X.SF(X.RWO,0,1.25),n:X.ra,step:2});
  S.cableLen=cable.buf.len;S.cableDur=3800;return S}
@@ -2451,11 +2456,13 @@ Viewer.prototype.loop=function(now){requestAnimationFrame(this.loop);
  var asp=this.cv.width/this.cv.height,D=this.dist*(asp<1.3?1.38/asp*(this._fz||1):1),cH=this.cv.clientHeight;
  /* tall objects in a short window: keep them clear of the hint line on top and the buttons along the bottom */
  if(asp>=1.3&&this.cur.cam.fitV&&cH>140)D*=Math.max(1,this.cur.cam.fitV*cH/(cH-124));var cp=Math.cos(this.pitch),eye=[this.target[0]+Math.sin(this.yaw)*cp*D,this.target[1]+Math.sin(this.pitch)*D,this.target[2]+Math.cos(this.yaw)*cp*D];
- var P=M4.persp(0.62,asp,0.1,200);/* lens shift: lift the picture a little so the buttons along the bottom never cover the model */P[9]=-(this.cur.cam.shift||0)*Math.min(0.2,90/Math.max(1,this.cv.clientHeight));var V=M4.look(eye,this.target,[0,1,0]),VP;
+ var P=M4.persp(0.62,asp,clamp(D*0.035,0.1,0.8),D*5+60);/* lens shift: lift the picture a little so the buttons along the bottom never cover the model */P[9]=-(this.cur.cam.shift||0)*Math.min(0.2,90/Math.max(1,this.cv.clientHeight));var V=M4.look(eye,this.target,[0,1,0]),VP;
  /* narrow (phone) frames: whatever is on screen is kept centred in the free area between the top edge and the buttons */
  if(asp<1.3)this.centre(P,V);VP=M4.mul(P,V);
  /* per-object model matrices (pop-in scales around the object's own centre) */
  S.list.forEach(function(o){if(o.s!==undefined&&o.s<0.999){var s=Math.max(0.0001,o.s),c=o._c;o.m=M4.trs([c[0]*(1-s)+o.pos[0],c[1]*(1-s)+o.pos[1],c[2]*(1-s)+o.pos[2]],o.rot,[s,s,s])}else o.m=null});
+ var cI0=false,E0=0;S.list.some(function(o){if(o.key=='insT'){cI0=o.alpha>0.97&&(o.e||0)<0.02;E0=o.e||0;return true}});
+ S.list.forEach(function(o){if(o.uc)o.hid=cI0;if(o.full)o.hx=E0>0.001;else if(o.half)o.hx=E0<=0.001});
  this.R.draw(S.list,VP,eye,(now-this.t0)/1000);this.chrome(V);
  /* labels */
  var W=this.cv.clientWidth,H=this.cv.clientHeight,camDir=nrm(sub(eye,this.target)),st=this.labStep||0,ex=this.state.exploded;
