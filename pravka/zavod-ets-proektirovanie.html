@@ -1876,11 +1876,11 @@ function kbox(S,key,place,rot,nl){var D=nl?window.ETS_BOXN:window.ETS_BOX;if(!D)
  Object.keys(D).forEach(function(m){var d=D[m],P=decB(d.p,Int16Array),N=decB(d.n,Int8Array),I=decB(d.i,Uint16Array),nv=P.length/3;
   var g={p:new Float32Array(nv*3),n:new Float32Array(nv*3),u:new Float32Array(nv*2),i:I};
   for(var k=0;k<nv;k++){var q=place([P[k*3]/10,P[k*3+1]/10,P[k*3+2]/10]),r=rot([N[k*3]/127,N[k*3+1]/127,N[k*3+2]/127]);g.p[k*3]=q[0];g.p[k*3+1]=q[1];g.p[k*3+2]=q[2];g.n[k*3]=r[0];g.n[k*3+1]=r[1];g.n[k*3+2]=r[2]}
-    /* in the CAD export the two left lid screws came in the gland part (light metal) and the two right ones in the black body,
-     so the right screws were all but invisible: they are taken out of the body and drawn in the same metal as the left ones */
-  if(m=='body'){var keep=[],scr=[];for(var t=0;t<I.length;t+=3){var inS=true,y0=1e9,y1=-1e9;for(var j=0;j<3;j++){var v=I[t+j],x=P[v*3]/10,y=P[v*3+1]/10,z=P[v*3+2]/10;y0=Math.min(y0,y);y1=Math.max(y1,y);
-     if(!(x>46.5&&x<58.5&&z>42&&((y>112.5&&y<124.5)||(y>217.5&&y<229.5))))inS=false}if(y1-y0>12)inS=false;(inS?scr:keep).push(I[t],I[t+1],I[t+2])}
-   if(scr.length){objs.push(S.add(key,{p:g.p,n:g.n,u:g.u,i:scr},MAT.kgland,{group:'heat'}));g.i=keep}}
+    /* in the CAD export only the two left lid screws have heads (they came with the gland part); on the right the lid has just
+     the empty holes, which looked like black screws. The left heads are mirrored into the right holes */
+  if(m=='gland'&&!nl){var mi=[],seen={},mp=[],mn=[],mu=[];for(var t=0;t<I.length;t+=3){var ok=true;for(var j=0;j<3;j++){var v=I[t+j];if(!(P[v*3]/10>-66&&P[v*3+2]/10>40))ok=false}if(!ok)continue;
+     for(j=0;j<3;j++){v=I[t+j];if(seen[v]===undefined){seen[v]=mp.length/3;var q=place([-P[v*3]/10,P[v*3+1]/10,P[v*3+2]/10]),r=rot([-N[v*3]/127,N[v*3+1]/127,N[v*3+2]/127]);mp.push(q[0],q[1],q[2]);mn.push(r[0],r[1],r[2]);mu.push(0,0)}mi.push(seen[v])}}
+   if(mi.length)objs.push(S.add(key,{p:mp,n:mn,u:mu,i:mi},MAT.kgland,{group:'heat'}))}
   objs.push(S.add(key,g,mats[m]||MAT.kbody,{group:'heat'}))});
  var c=place([0,171,0]);objs.forEach(function(o){o._c=c});return objs}
 /* model point helper: box points are given relative to the foot centre (y measured from the foot) */
@@ -2332,6 +2332,8 @@ function buildTank(R,data,ST){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,
  moveG(jk,0,OY,0);S.add('jacket',jk,MAT.jacket,{group:'ins',alpha:0,blend:true,twoPass:true,center:[VXo,OY,0]});
  var pi=yToX(cyl(G(),PR+0.07,J1,PX1-0.12,32,0,Math.PI*2));moveG(pi,0,OY,0);S.add('insB',pi,MAT.insul,{group:'ins',alpha:0,blend:true,twoPass:true,center:[3,OY,0]});
  var pc2=yToX(merge(cyl(G(),PR+0.085,J1,PX1-0.12,32,0,Math.PI*2),ann(G(),PR,PR+0.085,PX1-0.12,0,Math.PI*2,32,1)));moveG(pc2,0,OY,0);S.add('cladB',pc2,MAT.clad,{group:'ins',alpha:0,blend:true,twoPass:true,center:[3,OY,0]});
+ /* the end flange of the outlet gets a removable jacket with a closed end, like the blind flange on the pipeline */
+ var ec=yToX(cyl(G(),PR+0.12,PX1-0.2,PX1+0.1,40,0,Math.PI*2,true,true));moveG(ec,0,OY,0);S.add('jacket',ec,MAT.jacket,{group:'ins',alpha:0,blend:true,twoPass:true,center:[PX1,OY,0]});
  var si=G();box(si,0.3,0.2,0.3,PS,OY-0.2,0);S.add('insB',si,MAT.insul,{group:'ins',alpha:0,blend:true,twoPass:true,center:[PS,OY-0.2,0]});
  var sc=G();box(sc,0.32,0.22,0.32,PS,OY-0.205,0);box(sc,0.14,0.012,0.14,PS,OY-0.318,0);S.add('cladB',sc,MAT.clad,{group:'ins',alpha:0,blend:true,twoPass:true,center:[PS,OY-0.2,0]});
  S.layers={ins:1,clad:1,jacket:1};
