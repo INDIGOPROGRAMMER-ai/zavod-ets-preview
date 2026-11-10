@@ -1795,7 +1795,7 @@ var FS='precision highp float;varying vec3 vW;varying vec3 vN;varying vec2 vUV;u
  'col=aces(col*1.05);gl_FragColor=vec4(pow(col,vec3(1.0/2.2)),a);}';
 
 function Renderer(canvas){
- var gl=canvas.getContext('webgl',{antialias:true,alpha:true,premultipliedAlpha:false})||canvas.getContext('experimental-webgl');
+ var gl=canvas.getContext('webgl',{antialias:true,alpha:true,premultipliedAlpha:false,powerPreference:'high-performance'})||canvas.getContext('experimental-webgl');
  if(!gl)throw new Error('no webgl');
  var u32=gl.getExtension('OES_element_index_uint');
  function sh(t,src){var s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s}
@@ -1805,15 +1805,26 @@ function Renderer(canvas){
  ['uM','uVP','uNM','uCam','uBase','uTex','uUseTex','uMetal','uRough','uAlpha','uEmis','uProg','uGlow','uTime','uLen','uUnlit','uTexA','uHi','uFade'].forEach(function(k){U[k]=gl.getUniformLocation(pr,k)});
  var white=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,white);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([255,255,255,255]));
  gl.enable(gl.DEPTH_TEST);gl.clearColor(0,0,0,0);
- function upload(g){var o={};function buf(t,data){var b=gl.createBuffer();gl.bindBuffer(t,b);gl.bufferData(t,data,gl.STATIC_DRAW);return b}
-  /* no index buffers at all: every triangle gets its own three vertices and is drawn with drawArrays, and every buffer ends
-     with spare vertices that are never drawn. On some Windows GPUs indexed drawing picked wrong vertices (the last one of a
-     buffer read as the origin, or a vertex of the neighbouring box), which drew huge triangles and flaps across the scene */
-  var I=[],q;for(q=0;q<g.i.length;q+=3){var A=g.i[q]*3,B=g.i[q+1]*3,C=g.i[q+2]*3,ux=g.p[B]-g.p[A],uy=g.p[B+1]-g.p[A+1],uz=g.p[B+2]-g.p[A+2],vx=g.p[C]-g.p[A],vy=g.p[C+1]-g.p[A+1],vz=g.p[C+2]-g.p[A+2],cx=uy*vz-uz*vy,cy=uz*vx-ux*vz,cz=ux*vy-uy*vx;if(cx*cx+cy*cy+cz*cz>1e-16)I.push(g.i[q],g.i[q+1],g.i[q+2])}
-  g={p:g.p,n:g.n,u:g.u,i:I,len:g.len};var ni=g.i.length,tot=ni+12,P=new Float32Array(tot*3),N=new Float32Array(tot*3),UV=new Float32Array(tot*2),k,v;
-  for(k=0;k<ni;k++){v=g.i[k];P[k*3]=g.p[v*3];P[k*3+1]=g.p[v*3+1];P[k*3+2]=g.p[v*3+2];var nx=g.n[v*3],ny=g.n[v*3+1],nz=g.n[v*3+2];if(!(nx*nx+ny*ny+nz*nz>1e-10)){nx=0;ny=1;nz=0}N[k*3]=nx;N[k*3+1]=ny;N[k*3+2]=nz;UV[k*2]=g.u[v*2];UV[k*2+1]=g.u[v*2+1]}
-  for(k=ni;k<tot;k++){P[k*3]=P[0];P[k*3+1]=P[1];P[k*3+2]=P[2];N[k*3+1]=1;UV[k*2]=2}
-  o.p=buf(gl.ARRAY_BUFFER,P);o.n=buf(gl.ARRAY_BUFFER,N);o.u=buf(gl.ARRAY_BUFFER,UV);o.cnt=ni;o.len=g.len||1;return o}
+ function buf(t,data){var b=gl.createBuffer();gl.bindBuffer(t,b);gl.bufferData(t,data,gl.STATIC_DRAW);return b}
+ function upload(g){var o={};
+  /* all parts of a scene share one set of vertex buffers and are drawn as ranges of it (drawArrays with an offset), so no two
+     vertices drawn in a frame ever have the same number. On a Windows GPU per-part buffers drew stray triangles (a vertex of
+     the part drawn before showed up in the next one): flaps on the cabinet, spikes on the cladding, slivers on the jackets */
+  var I=[],q;for(q=0;q<g.i.length;q+=3){var A0=g.i[q]*3,B0=g.i[q+1]*3,C0=g.i[q+2]*3,ux=g.p[B0]-g.p[A0],uy=g.p[B0+1]-g.p[A0+1],uz=g.p[B0+2]-g.p[A0+2],vx=g.p[C0]-g.p[A0],vy=g.p[C0+1]-g.p[A0+1],vz=g.p[C0+2]-g.p[A0+2],cx=uy*vz-uz*vy,cy=uz*vx-ux*vz,cz=ux*vy-uy*vx;if(cx*cx+cy*cy+cz*cz>1e-16)I.push(g.i[q],g.i[q+1],g.i[q+2])}
+  var ni=I.length,P=new Float32Array(ni*3),N=new Float32Array(ni*3),UV=new Float32Array(ni*2),k,v;
+  for(k=0;k<ni;k++){v=I[k];P[k*3]=g.p[v*3];P[k*3+1]=g.p[v*3+1];P[k*3+2]=g.p[v*3+2];var nx=g.n[v*3],ny=g.n[v*3+1],nz=g.n[v*3+2];if(!(nx*nx+ny*ny+nz*nz>1e-10)){nx=0;ny=1;nz=0}N[k*3]=nx;N[k*3+1]=ny;N[k*3+2]=nz;UV[k*2]=g.u[v*2];UV[k*2+1]=g.u[v*2+1]}
+  if(!batch||batch.done)batch={parts:[],n:0,done:false};
+  batch.parts.push([P,N,UV]);o.bt=batch;o.first=batch.n;o.cnt=ni;o.len=g.len||1;batch.n+=ni;return o}
+ var batch=null,cur=null;
+ /* the first time a scene is drawn its parts are packed into one buffer per attribute (plus spare vertices at the end) */
+ function pack(bt){var n=bt.n+12,P=new Float32Array(n*3),N=new Float32Array(n*3),UV=new Float32Array(n*2),off=0;
+  bt.parts.forEach(function(q){P.set(q[0],off*3);N.set(q[1],off*3);UV.set(q[2],off*2);off+=q[0].length/3});
+  for(var k=bt.n;k<n;k++){P[k*3]=P[0];P[k*3+1]=P[1];P[k*3+2]=P[2];N[k*3+1]=1;UV[k*2]=2}
+  bt.p=buf(gl.ARRAY_BUFFER,P);bt.nb=buf(gl.ARRAY_BUFFER,N);bt.u=buf(gl.ARRAY_BUFFER,UV);bt.parts=null;bt.done=true}
+ function bind(bt){if(!bt.done)pack(bt);if(cur===bt)return;cur=bt;
+  gl.bindBuffer(gl.ARRAY_BUFFER,bt.p);gl.enableVertexAttribArray(A.p);gl.vertexAttribPointer(A.p,3,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,bt.nb);gl.enableVertexAttribArray(A.n);gl.vertexAttribPointer(A.n,3,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,bt.u);gl.enableVertexAttribArray(A.u);gl.vertexAttribPointer(A.u,2,gl.FLOAT,false,0,0)}
  function texture(src,cb){var t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([200,200,200,255]));
   var im=new Image();im.onload=function(){gl.bindTexture(gl.TEXTURE_2D,t);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,im);
    var pot=(im.width&(im.width-1))==0&&(im.height&(im.height-1))==0;if(pot){gl.generateMipmap(gl.TEXTURE_2D);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR)}else{gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR)}
@@ -1825,7 +1836,10 @@ function Renderer(canvas){
   gl.uniformMatrix4fv(U.uVP,false,VP);gl.uniform3fv(U.uCam,cam);gl.uniform1f(U.uTime,time);
   var op=[],tr=[];list.forEach(function(o){if(!o.visible||o.hid||o.hx||o.alpha<=0.003)return;(o.alpha<0.999||(o.blend&&!o.op)?tr:op).push(o)});
   tr.forEach(function(o){o._d=len(sub(o.center||[o.pos[0],o.pos[1],o.pos[2]],cam))});tr.sort(function(a,b){return b._d-a._d});
-  op.sort(function(a,b){return(a.fade?1:0)-(b.fade?1:0)});gl.disable(gl.BLEND);gl.depthMask(true);op.forEach(function(o){if(o.fade&&!o.op){gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);one(o);gl.disable(gl.CULL_FACE)}else one(o)});
+  op.sort(function(a,b){return(a.fade?1:0)-(b.fade?1:0)});gl.disable(gl.BLEND);gl.depthMask(true);op.forEach(function(o){if((o.fade&&!o.op)||o.full){gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);one(o);gl.disable(gl.CULL_FACE)}
+   else if(o.op){/* the inside of an open shell is drawn first and pushed back, so its edge never flickers through the outside */
+    gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);gl.enable(gl.POLYGON_OFFSET_FILL);gl.polygonOffset(1.5,4);gl.cullFace(gl.BACK);gl.cullFace(gl.FRONT);one(o);
+    gl.disable(gl.POLYGON_OFFSET_FILL);gl.cullFace(gl.BACK);one(o);gl.disable(gl.CULL_FACE)}else one(o)});
   gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
   tr.forEach(function(o){if(o.twoPass){gl.enable(gl.CULL_FACE);gl.cullFace(gl.FRONT);one(o);gl.cullFace(gl.BACK);one(o);gl.disable(gl.CULL_FACE)}else one(o)});
   gl.depthMask(true);gl.disable(gl.BLEND)}
@@ -1835,10 +1849,7 @@ function Renderer(canvas){
   gl.uniform3fv(U.uEmis,o.emis||[0,0,0]);gl.uniform1f(U.uGlow,o.glow||0);gl.uniform1f(U.uProg,o.prog===undefined?2:o.prog);gl.uniform1f(U.uLen,b.len||1);
   var fd=o.fade;gl.uniform4f(U.uFade,fd?fd[0]:0,fd?fd[1]:0,fd?fd[2]:1,fd?1:0);gl.uniform1f(U.uUnlit,o.unlit?1:0);gl.uniform1f(U.uTexA,o.texA?1:0);gl.uniform1f(U.uHi,o.hi||0);
   gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,o.tex||white);gl.uniform1i(U.uTex,0);gl.uniform1f(U.uUseTex,o.tex?1:0);
-  gl.bindBuffer(gl.ARRAY_BUFFER,b.p);gl.enableVertexAttribArray(A.p);gl.vertexAttribPointer(A.p,3,gl.FLOAT,false,0,0);
-  gl.bindBuffer(gl.ARRAY_BUFFER,b.n);gl.enableVertexAttribArray(A.n);gl.vertexAttribPointer(A.n,3,gl.FLOAT,false,0,0);
-  gl.bindBuffer(gl.ARRAY_BUFFER,b.u);gl.enableVertexAttribArray(A.u);gl.vertexAttribPointer(A.u,2,gl.FLOAT,false,0,0);
-  gl.drawArrays(gl.TRIANGLES,0,b.cnt)}
+  if(!b.cnt)return;bind(b.bt);gl.drawArrays(gl.TRIANGLES,b.first,b.cnt)}
  return{gl:gl,upload:upload,texture:texture,canvasTex:canvasTex,draw:draw}}
 
 /* ---------- materials ---------- */
@@ -1864,6 +1875,11 @@ function kbox(S,key,place,rot,nl){var D=nl?window.ETS_BOXN:window.ETS_BOX;if(!D)
  Object.keys(D).forEach(function(m){var d=D[m],P=decB(d.p,Int16Array),N=decB(d.n,Int8Array),I=decB(d.i,Uint16Array),nv=P.length/3;
   var g={p:new Float32Array(nv*3),n:new Float32Array(nv*3),u:new Float32Array(nv*2),i:I};
   for(var k=0;k<nv;k++){var q=place([P[k*3]/10,P[k*3+1]/10,P[k*3+2]/10]),r=rot([N[k*3]/127,N[k*3+1]/127,N[k*3+2]/127]);g.p[k*3]=q[0];g.p[k*3+1]=q[1];g.p[k*3+2]=q[2];g.n[k*3]=r[0];g.n[k*3+1]=r[1];g.n[k*3+2]=r[2]}
+    /* in the CAD export the two left lid screws came in the gland part (light metal) and the two right ones in the black body,
+     so the right screws were all but invisible: they are taken out of the body and drawn in the same metal as the left ones */
+  if(m=='body'){var keep=[],scr=[];for(var t=0;t<I.length;t+=3){var inS=true,y0=1e9,y1=-1e9;for(var j=0;j<3;j++){var v=I[t+j],x=P[v*3]/10,y=P[v*3+1]/10,z=P[v*3+2]/10;y0=Math.min(y0,y);y1=Math.max(y1,y);
+     if(!(x>46.5&&x<58.5&&z>42&&((y>112.5&&y<124.5)||(y>217.5&&y<229.5))))inS=false}if(y1-y0>12)inS=false;(inS?scr:keep).push(I[t],I[t+1],I[t+2])}
+   if(scr.length){objs.push(S.add(key,{p:g.p,n:g.n,u:g.u,i:scr},MAT.kgland,{group:'heat'}));g.i=keep}}
   objs.push(S.add(key,g,mats[m]||MAT.kbody,{group:'heat'}))});
  var c=place([0,171,0]);objs.forEach(function(o){o._c=c});return objs}
 /* model point helper: box points are given relative to the foot centre (y measured from the foot) */
@@ -2462,7 +2478,8 @@ Viewer.prototype.loop=function(now){requestAnimationFrame(this.loop);
  /* per-object model matrices (pop-in scales around the object's own centre) */
  S.list.forEach(function(o){if(o.s!==undefined&&o.s<0.999){var s=Math.max(0.0001,o.s),c=o._c;o.m=M4.trs([c[0]*(1-s)+o.pos[0],c[1]*(1-s)+o.pos[1],c[2]*(1-s)+o.pos[2]],o.rot,[s,s,s])}else o.m=null});
  var cI0=false,E0=0;S.list.some(function(o){if(o.key=='insT'){cI0=o.alpha>0.97&&(o.e||0)<0.02;E0=o.e||0;return true}});
- S.list.forEach(function(o){if(o.uc)o.hid=cI0;if(o.full)o.hx=E0>0.001;else if(o.half)o.hx=E0<=0.001});
+ var cC0=false;S.list.some(function(o){if(o.key=='cladF'){cC0=o.alpha>0.97&&E0<0.001;return true}});
+ S.list.forEach(function(o){if(o.uc)o.hid=cI0;else if(o.group=='ins'&&o.key.indexOf('ins')==0)o.hid=cC0;if(o.full)o.hx=E0>0.001;else if(o.half)o.hx=E0<=0.001});
  this.R.draw(S.list,VP,eye,(now-this.t0)/1000);this.chrome(V);
  /* labels */
  var W=this.cv.clientWidth,H=this.cv.clientHeight,camDir=nrm(sub(eye,this.target)),st=this.labStep||0,ex=this.state.exploded;
@@ -2527,7 +2544,7 @@ var _add=Scene.prototype.add;Scene.prototype.add=function(key,g,mat,opt){var mn=
 
 /* diagnostics: open the page with #gpu to see which graphics card and driver the browser uses for the model */
 function gpuInfo(root,gl){try{var d=gl.getExtension('WEBGL_debug_renderer_info'),t=(d?gl.getParameter(d.UNMASKED_RENDERER_WEBGL)+' · '+gl.getParameter(d.UNMASKED_VENDOR_WEBGL):gl.getParameter(gl.RENDERER))+' · depth '+gl.getParameter(gl.DEPTH_BITS)+' · '+navigator.userAgent.replace(/^.*?\) /,'');
- var el=document.createElement('div');el.textContent=t;el.style.cssText='position:absolute;left:8px;top:8px;right:8px;z-index:9;font:12px/1.4 Arial,sans-serif;color:#fff;background:rgba(0,0,0,.75);padding:6px 8px;border-radius:6px;user-select:text;pointer-events:auto';(root.querySelector('.m3-vp')||root).appendChild(el)}catch(e){}}
+ var el=document.createElement('div');el.textContent=t;el.style.cssText='position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483647;font:14px/1.45 Arial,sans-serif;color:#fff;background:#B3261E;padding:10px 14px;border-radius:8px;user-select:text;pointer-events:auto;white-space:normal;word-break:break-all';document.body.appendChild(el)}catch(e){}}
 window.ETS3D={init:function(root,opts){try{var v=new Viewer(root,opts);v.setScene(opts.start||'pipe');root.classList.add('ready');if(/gpu/.test(location.hash))gpuInfo(root,v.R.gl);return v}catch(e){root.classList.add('nogl');if(window.console)console.warn('3D:',e);return null}}};
 })();
 </script>
