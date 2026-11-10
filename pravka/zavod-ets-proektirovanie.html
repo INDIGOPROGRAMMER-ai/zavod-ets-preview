@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta name="robots" content="noindex, nofollow">
-<script>window.ZETS_EDIT=1;window.ZETS_PAGES={"index.html": "Главная", "zavod-ets-o-kompanii.html": "О компании", "zavod-ets-napravleniya.html": "Направления", "zavod-ets-proektirovanie.html": "Проектирование промышленных объектов", "zavod-ets-proektirovanie-krovli.html": "Проектирование кровли", "zavod-ets-proizvodstvo.html": "Производство", "zavod-ets-shkafy-upravleniya.html": "Шкафы управления", "zavod-ets-raspredelitelnye-moduli.html": "Распределительные модули", "zavod-ets-nagrevatelnye-elementy.html": "Нагревательные элементы", "zavod-ets-montazh-elektroobogreva.html": "Монтаж систем электрообогрева", "zavod-ets-montazh-teploizolyacii.html": "Монтаж теплоизоляции", "zavod-ets-uslugi.html": "Услуги", "zavod-ets-obekty.html": "Объекты", "zavod-ets-oprosnye-listy.html": "Опросные листы", "zavod-ets-politika-konfidencialnosti.html": "Политика конфиденциальности", "zavod-ets-soglasie.html": "Согласие на обработку персональных данных"};window.ZETS_M3={"pipe": ["Нагревательный модуль", "Коробка подключения ЭТС МК", "Коробка контрольная ЭТС МК", "Силовой кабель", "Контрольный кабель", "Датчик температуры", "Шкаф управления ЭТС ШУО", "Съёмный термочехол на фланцах", "Теплоизоляция", "Защитный кожух"], "tank": ["Нагревательный модуль", "Коробка подключения ЭТС МК", "Коробка контрольная ЭТС МК", "Силовой кабель", "Контрольный кабель", "Датчик температуры", "Концевая заделка", "Шкаф управления ЭТС ШУО", "Термочехол на задвижке", "Теплоизоляция", "Защитный кожух"]};try{if(!localStorage.getItem('zets-cookie'))localStorage.setItem('zets-cookie',String(Date.now()))}catch(e){}</script>
+<script>window.ZETS_EDIT=1;window.ZETS_PAGES={"index.html": "Главная", "zavod-ets-o-kompanii.html": "О компании", "zavod-ets-napravleniya.html": "Направления", "zavod-ets-proektirovanie.html": "Проектирование промышленных объектов", "zavod-ets-proektirovanie-krovli.html": "Проектирование кровли", "zavod-ets-proizvodstvo.html": "Производство", "zavod-ets-shkafy-upravleniya.html": "Шкафы управления", "zavod-ets-raspredelitelnye-moduli.html": "Распределительные модули", "zavod-ets-nagrevatelnye-elementy.html": "Нагревательные элементы", "zavod-ets-montazh-elektroobogreva.html": "Монтаж систем электрообогрева", "zavod-ets-montazh-teploizolyacii.html": "Монтаж теплоизоляции", "zavod-ets-uslugi.html": "Услуги", "zavod-ets-obekty.html": "Объекты", "zavod-ets-oprosnye-listy.html": "Опросные листы", "zavod-ets-politika-konfidencialnosti.html": "Политика конфиденциальности", "zavod-ets-soglasie.html": "Согласие на обработку персональных данных"};window.ZETS_M3={"pipe": ["Нагревательный модуль", "Распределительный модуль ЭТС МК", "Силовой кабель", "Контрольный кабель", "Датчик температуры", "Шкаф управления ЭТС ШУО", "Съёмный термочехол на фланцах", "Теплоизоляция", "Защитный кожух"], "tank": ["Нагревательный модуль", "Распределительный модуль ЭТС МК", "Силовой кабель", "Контрольный кабель", "Датчик температуры", "Концевая заделка", "Шкаф управления ЭТС ШУО", "Термочехол на задвижке", "Теплоизоляция", "Защитный кожух"]};try{if(!localStorage.getItem('zets-cookie'))localStorage.setItem('zets-cookie',String(Date.now()))}catch(e){}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Правка · Проектирование промышленного электрообогрева · Завод ЭТС</title>
@@ -2098,8 +2098,8 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,MM=KS,PR=54*MM,TX=-1.0,X0=TX-1450
  S.explode=function(o,e){if(o.key=='cladT')o.pos=[0,0.85*e,0];else if(o.key=='cladB')o.pos=[0,-0.5*e,0];else if(o.key=='insT')o.pos=[0,0.45*e,0];else if(o.key=='insB')o.pos=[0,-0.28*e,0];else if(o.key=='jacket')o.pos=[0,0.75*e,0]};
  S.labels=[
   {k:'cable',t:'Нагревательный модуль',p:onPipe(X(-850),TH),n:[0,0,1],step:2,dy:44,side:'l'},
-  {k:'pbox',t:'Коробка подключения ЭТС МК',p:PPL(KP(0,64,45)),n:[0,1,.3],step:2},
-  {k:'tbox',t:'Коробка контрольная ЭТС МК',p:TPL(KP(0,64,45)),n:[0,1,.3],step:3,side:'l'},
+  {k:'pbox',t:'Распределительный модуль ЭТС МК',p:PPL(KP(0,64,45)),n:[0,1,.3],step:2},
+  {k:'tbox',t:'Распределительный модуль ЭТС МК',p:TPL(KP(0,64,45)),n:[0,1,.3],step:3,side:'l'},
   {k:'pcable',t:'Силовой кабель',p:[GL[0]-0.3,0.95,HZ],n:[0,0,1],step:1},
   {k:'ccable',t:'Контрольный кабель',p:[TGL[0]-0.3,0.85,HZ2],n:[0,0,1],step:3},
   {k:'sensor',t:'Датчик температуры',p:[TX,Y+PR+2*SR+0.01,SZ],n:[0,1,.2],step:3,dy:40},
@@ -2305,8 +2305,8 @@ function buildTank(R,data,ST){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,
  var lid=KP(0,0,90);
  S.labels=[
   {k:'cable',t:'Нагревательный модуль',p:TP(125,yT[5]),n:[Math.cos(125*DEG),0,Math.sin(125*DEG)],step:2,side:'l',dy:40},
-  {k:'pbox',t:'Коробка подключения ЭТС МК',p:ST?X.PB.p([0,171,45]):PB.p([0,231,0]),n:ST?X.ra:PB.r,step:2},
-  {k:'tbox',t:'Коробка контрольная ЭТС МК',p:ST?X.TB.p([0,171,45]):TB.p([0,231,0]),n:ST?X.ra:TB.r,step:3,side:'l'},
+  {k:'pbox',t:'Распределительный модуль ЭТС МК',p:ST?X.PB.p([0,171,45]):PB.p([0,231,0]),n:ST?X.ra:PB.r,step:2},
+  {k:'tbox',t:'Распределительный модуль ЭТС МК',p:ST?X.TB.p([0,171,45]):TB.p([0,231,0]),n:ST?X.ra:TB.r,step:3,side:'l'},
   {k:'pcable',t:'Силовой кабель',p:ST?X.SF(X.RFC,50*KS+HR+4*KS,2.6):[GRp[0],GRp[1]*0.5,GRp[2]],n:ST?X.ta:PB.r,step:1},
   {k:'ccable',t:'Контрольный кабель',p:ST?X.SF(X.RFC,-(50*KS+0.033),2.0):[GRt[0],GRt[1]*0.5,GRt[2]],n:ST?X.ra:TB.r,step:3,side:'l'},
   {k:'sensor',t:'Датчик температуры',p:spp,n:Rd,step:3,side:'l',dy:40},
