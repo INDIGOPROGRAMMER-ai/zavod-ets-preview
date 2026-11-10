@@ -1723,6 +1723,8 @@ function cyl(g,r,y0,y1,seg,a0,a1,capB,capT,rTop){
  if(capB)cap(y0,r,-1);if(capT)cap(y1,rt,1);
  if(!full){/* close the open edges of a partial shell with nothing: shells are drawn double-sided */}
  return g}
+function ann(g,r0,r1,y,a0,a1,seg,up){var b=g.p.length/3;for(var s=0;s<=seg;s++){var a=a0+(a1-a0)*s/seg,c=Math.cos(a),sn=-Math.sin(a);pushV(g,[c*r0,y,sn*r0],[0,up,0],[s/seg,0]);pushV(g,[c*r1,y,sn*r1],[0,up,0],[s/seg,1])}
+ for(s=0;s<seg;s++){var k=b+s*2;if(up>0)g.i.push(k,k+2,k+1,k+1,k+2,k+3);else g.i.push(k,k+1,k+2,k+1,k+3,k+2)}return g}
 function box(g,w,h,d,cx,cy,cz){cx=cx||0;cy=cy||0;cz=cz||0;var x=w/2,y=h/2,z=d/2;
  var F=[[[1,0,0],[[x,-y,-z],[x,y,-z],[x,y,z],[x,-y,z]]],[[-1,0,0],[[-x,-y,z],[-x,y,z],[-x,y,-z],[-x,-y,-z]]],[[0,1,0],[[-x,y,-z],[-x,y,z],[x,y,z],[x,y,-z]]],
   [[0,-1,0],[[-x,-y,z],[-x,-y,-z],[x,-y,-z],[x,-y,z]]],[[0,0,1],[[x,-y,z],[x,y,z],[-x,y,z],[-x,-y,z]]],[[0,0,-1],[[-x,-y,-z],[-x,y,-z],[x,y,-z],[x,-y,-z]]]];
@@ -1804,15 +1806,13 @@ function Renderer(canvas){
  var white=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,white);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([255,255,255,255]));
  gl.enable(gl.DEPTH_TEST);gl.clearColor(0,0,0,0);
  function upload(g){var o={};function buf(t,data){var b=gl.createBuffer();gl.bindBuffer(t,b);gl.bufferData(t,data,gl.STATIC_DRAW);return b}
-  /* every buffer starts with a spare vertex and ends with 8 spare ones that no triangle uses: on some Windows GPUs the last
-     vertex of a buffer is read as the origin (the fetch runs past the end of the data), which drew huge triangles and flaps
-     from the cabinet door, the hinges and the insulation across the scene */
-  var nv=g.p.length/3,tot=Math.max(nv+9,64),P=new Float32Array(tot*3),N=new Float32Array(tot*3),UV=new Float32Array(tot*2),k;
-  P.set(g.p,3);N.set(g.n,3);UV.set(g.u,2);for(k=nv+1;k<tot;k++){P[k*3]=g.p[0];P[k*3+1]=g.p[1];P[k*3+2]=g.p[2]}P[0]=g.p[0];P[1]=g.p[1];P[2]=g.p[2];
-  for(k=0;k<tot;k++)if(k==0||k>nv){N[k*3+1]=1;UV[k*2]=2}
-  o.p=buf(gl.ARRAY_BUFFER,P);o.n=buf(gl.ARRAY_BUFFER,N);o.u=buf(gl.ARRAY_BUFFER,UV);
-  var big=tot>65535,idx=big?new Uint32Array(g.i.length):new Uint16Array(g.i.length);for(k=0;k<g.i.length;k++)idx[k]=g.i[k]+1;
-  o.i=buf(gl.ELEMENT_ARRAY_BUFFER,idx);o.cnt=idx.length;o.type=idx instanceof Uint32Array?gl.UNSIGNED_INT:gl.UNSIGNED_SHORT;o.len=g.len||1;return o}
+  /* no index buffers at all: every triangle gets its own three vertices and is drawn with drawArrays, and every buffer ends
+     with spare vertices that are never drawn. On some Windows GPUs indexed drawing picked wrong vertices (the last one of a
+     buffer read as the origin, or a vertex of the neighbouring box), which drew huge triangles and flaps across the scene */
+  var ni=g.i.length,tot=ni+12,P=new Float32Array(tot*3),N=new Float32Array(tot*3),UV=new Float32Array(tot*2),k,v;
+  for(k=0;k<ni;k++){v=g.i[k];P[k*3]=g.p[v*3];P[k*3+1]=g.p[v*3+1];P[k*3+2]=g.p[v*3+2];N[k*3]=g.n[v*3];N[k*3+1]=g.n[v*3+1];N[k*3+2]=g.n[v*3+2];UV[k*2]=g.u[v*2];UV[k*2+1]=g.u[v*2+1]}
+  for(k=ni;k<tot;k++){P[k*3]=P[0];P[k*3+1]=P[1];P[k*3+2]=P[2];N[k*3+1]=1;UV[k*2]=2}
+  o.p=buf(gl.ARRAY_BUFFER,P);o.n=buf(gl.ARRAY_BUFFER,N);o.u=buf(gl.ARRAY_BUFFER,UV);o.cnt=ni;o.len=g.len||1;return o}
  function texture(src,cb){var t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([200,200,200,255]));
   var im=new Image();im.onload=function(){gl.bindTexture(gl.TEXTURE_2D,t);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,im);
    var pot=(im.width&(im.width-1))==0&&(im.height&(im.height-1))==0;if(pot){gl.generateMipmap(gl.TEXTURE_2D);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR)}else{gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR)}
@@ -1837,7 +1837,7 @@ function Renderer(canvas){
   gl.bindBuffer(gl.ARRAY_BUFFER,b.p);gl.enableVertexAttribArray(A.p);gl.vertexAttribPointer(A.p,3,gl.FLOAT,false,0,0);
   gl.bindBuffer(gl.ARRAY_BUFFER,b.n);gl.enableVertexAttribArray(A.n);gl.vertexAttribPointer(A.n,3,gl.FLOAT,false,0,0);
   gl.bindBuffer(gl.ARRAY_BUFFER,b.u);gl.enableVertexAttribArray(A.u);gl.vertexAttribPointer(A.u,2,gl.FLOAT,false,0,0);
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,b.i);gl.drawElements(gl.TRIANGLES,b.cnt,b.type,0)}
+  gl.drawArrays(gl.TRIANGLES,0,b.cnt)}
  return{gl:gl,upload:upload,texture:texture,canvasTex:canvasTex,draw:draw}}
 
 /* ---------- materials ---------- */
@@ -2002,7 +2002,7 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,MM=KS,PR=54*MM,TX=-1.0,X0=TX-1450
     ends are never seen; only X0..X1 counts when the picture is fitted into a phone frame */
  var XA=X(-12940),XB=X(7000),FADE=[XA,XB,7],FIT=[X0-0.1,X1+0.1],LONG={fade:FADE,fit:FIT};
  function X(mm){return TX+mm*MM}
- S.cam={target:[-0.7,0.75,-0.1],dist:10.8,yaw:-0.55,pitch:0.36,min:4,max:19,shift:1};
+ S.cam={target:[-0.7,0.75,-0.1],dist:10.8,yaw:-0.55,pitch:0.36,min:4,max:19,shift:1,exz:1.25,exy:0.35};
  S.ground(7.5,-0.5,-0.4,5.2);
  /* geometry in a local frame: o origin, ax the axis, e1/e2 across it */
  function frame(ax){var e1=Math.abs(ax[1])<0.9?nrm(cross([0,1,0],ax)):[1,0,0];return{ax:ax,e1:e1,e2:cross(ax,e1)}}
@@ -2088,8 +2088,9 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,MM=KS,PR=54*MM,TX=-1.0,X0=TX-1450
  /* insulation (his: 25 mm, Ø158) and cladding in two halves each, so they can be pulled apart; the flanged joints are left
     open under removable jackets, the box legs go through */
  var RI=PR+25*MM,RK=RI+0.006,JH=110*MM,JR=150*MM,IO=80*MM;
- function hS(key,r,x0,x1,top,mat,far){var g=hArc(Y,r,x0,x1,top?-Math.PI/2:Math.PI/2,top?Math.PI/2:Math.PI*1.5,48);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[(x0+x1)/2,Y+(top?.2:-.2),0],fade:far?FADE:undefined,fit:far?LONG.fit:undefined})}
- function zS(key,r,z0,z1,top,mat){var g=yToZ(cyl(G(),r,z0,z1,40,top?0:Math.PI,top?Math.PI:Math.PI*2));moveG(g,TX,Y,0);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[TX,Y+(top?.2:-.2),(z0+z1)/2]})}
+ var OV=0.05;/* the halves overlap a little at the seams, so no crack ever shows the layer below */
+ function hS(key,r,x0,x1,top,mat,far){var g=hArc(Y,r,x0,x1,(top?-Math.PI/2:Math.PI/2)-OV,(top?Math.PI/2:Math.PI*1.5)+OV,50);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[(x0+x1)/2,Y+(top?.2:-.2),0],fade:far?FADE:undefined,fit:far?LONG.fit:undefined})}
+ function zS(key,r,z0,z1,top,mat){var g=yToZ(cyl(G(),r,z0,z1,42,(top?0:Math.PI)-OV,(top?Math.PI:Math.PI*2)+OV));moveG(g,TX,Y,0);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[TX,Y+(top?.2:-.2),(z0+z1)/2]})}
  [[X(-12790),C2-IO],[C2+IO,C1-IO],[C1+IO,X(6909.5)]].forEach(function(s){var n=Math.max(1,Math.ceil((s[1]-s[0])/3));for(var j=0;j<n;j++){var a=s[0]+(s[1]-s[0])*j/n,b=s[0]+(s[1]-s[0])*(j+1)/n;
   hS('insT',RI,a,b,true,MAT.insul,1);hS('insB',RI,a,b,false,MAT.insul,1);hS('cladT',RK,a,b,true,MAT.clad,1);hS('cladB',RK,a,b,false,MAT.clad,1)}});
  /* the cladding is made of sheets about 1 m long; a band covers every joint */
@@ -2103,7 +2104,7 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,MM=KS,PR=54*MM,TX=-1.0,X0=TX-1450
   S.add('jacket',o,MAT.jacket,{group:'ins',alpha:0,blend:true,twoPass:true,center:c})}
  jacket([C1,Y,0],[1,0,0]);jacket([C2,Y,0],[1,0,0]);jacket([TX,Y,-BJ*MM],[0,0,-1],true);
  S.layers={ins:1,clad:1,jacket:1};
- S.explode=function(o,e){if(o.key=='cladT')o.pos=[0,0.85*e,0];else if(o.key=='cladB')o.pos=[0,-0.5*e,0];else if(o.key=='insT')o.pos=[0,0.45*e,0];else if(o.key=='insB')o.pos=[0,-0.28*e,0];else if(o.key=='jacket')o.pos=[0,0.75*e,0]};
+ S.explode=function(o,e){if(o.key=='cladT')o.pos=[0,1.75*e,0];else if(o.key=='cladB')o.pos=[0,-0.8*e,0];else if(o.key=='insT')o.pos=[0,1.05*e,0];else if(o.key=='insB')o.pos=[0,-0.45*e,0];else if(o.key=='jacket')o.pos=[0,1.05*e,0]};
  S.labels=[
   {k:'cable',t:'Нагревательный модуль',p:onPipe(X(-850),TH),n:[0,0,1],step:2,dy:44,side:'l',cl:'ins'},
   {k:'pbox',t:'Распределительный модуль ЭТС МК',p:PPL(KP(0,64,45)),n:[0,1,.3],step:2},
@@ -2298,15 +2299,17 @@ function buildTank(R,data,ST){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,
  S.add('pcable',corr(G(),pc,HR,0.032),MAT.hose,{group:'heat',prog:0});
  S.add('ccable',corr(G(),cc,0.029,0.028),MAT.hose,{group:'heat',prog:0});
  /* insulation + cladding (two halves that slide apart), valve jacket, pipe insulation, insulated pipe support */
- function vshell(key,r,mat,first){[first,-first].forEach(function(sd){var a0=sd>0?-Math.PI/2:Math.PI/2,g=cyl(G(),r,Y0,Y1,40,a0,a0+Math.PI);var o=S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[sd*0.6,4,0]});o.sd=sd})}
+ function vshell(key,r,mat,first){[first,-first].forEach(function(sd){var a0=sd>0?-Math.PI/2:Math.PI/2,g=cyl(G(),r,Y0,Y1,42,a0-0.05,a0+Math.PI+0.05);var o=S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[sd*0.6,4,0]});o.sd=sd})}
  vshell('insT',RS+0.208,MAT.insul,-1);vshell('cladT',RS+0.223,MAT.clad,1);
+ [1,-1].forEach(function(sd){var a0=sd>0?-Math.PI/2:Math.PI/2,g=G();ann(g,RS-0.004,RS+0.223,Y1,a0-0.05,a0+Math.PI+0.05,42,1);ann(g,RS-0.004,RS+0.223,Y0,a0-0.05,a0+Math.PI+0.05,42,-1);
+  var o=S.add('cladT',g,MAT.clad,{group:'ins',alpha:0,blend:true,twoPass:true,center:[sd*0.6,4,0]});o.sd=sd});
  [1,-1].forEach(function(sd){var a0=sd>0?-Math.PI/2:Math.PI/2,g=G();for(var y=Y0+0.95;y<Y1-0.3;y+=1.1)merge(g,cyl(G(),RS+0.2265,y-0.014,y+0.014,40,a0,a0+Math.PI));var o=S.add('cladT',g,MAT.steel,{group:'ins',alpha:0,blend:true,twoPass:true,center:[sd*0.6,4,0]});o.sd=sd});
  var J0=1.12,J1=VXo+0.31,JR=0.3,jk=yToX(cyl(G(),JR,J0,J1,40,0,Math.PI*2));
  [[J0,-1],[J1,1]].forEach(function(e){var b=jk.p.length/3;for(var k=0;k<=40;k++){var a=k/40*Math.PI*2,ca=Math.cos(a),sa=Math.sin(a);pushV(jk,[e[0],ca*(PR+0.075),sa*(PR+0.075)],[e[1],0,0],[k/40,0]);pushV(jk,[e[0],ca*JR,sa*JR],[e[1],0,0],[k/40,1])}
   for(k=0;k<40;k++){var i=b+k*2;jk.i.push(i,i+2,i+1,i+1,i+2,i+3)}});
  moveG(jk,0,OY,0);S.add('jacket',jk,MAT.jacket,{group:'ins',alpha:0,blend:true,twoPass:true,center:[VXo,OY,0]});
  var pi=yToX(cyl(G(),PR+0.07,J1,PX1-0.12,32,0,Math.PI*2));moveG(pi,0,OY,0);S.add('insB',pi,MAT.insul,{group:'ins',alpha:0,blend:true,twoPass:true,center:[3,OY,0]});
- var pc2=yToX(cyl(G(),PR+0.085,J1,PX1-0.12,32,0,Math.PI*2));moveG(pc2,0,OY,0);S.add('cladB',pc2,MAT.clad,{group:'ins',alpha:0,blend:true,twoPass:true,center:[3,OY,0]});
+ var pc2=yToX(merge(cyl(G(),PR+0.085,J1,PX1-0.12,32,0,Math.PI*2),ann(G(),PR,PR+0.085,PX1-0.12,0,Math.PI*2,32,1)));moveG(pc2,0,OY,0);S.add('cladB',pc2,MAT.clad,{group:'ins',alpha:0,blend:true,twoPass:true,center:[3,OY,0]});
  var si=G();box(si,0.3,0.2,0.3,PS,OY-0.2,0);S.add('insB',si,MAT.insul,{group:'ins',alpha:0,blend:true,twoPass:true,center:[PS,OY-0.2,0]});
  var sc=G();box(sc,0.32,0.22,0.32,PS,OY-0.205,0);box(sc,0.14,0.012,0.14,PS,OY-0.318,0);S.add('cladB',sc,MAT.clad,{group:'ins',alpha:0,blend:true,twoPass:true,center:[PS,OY-0.2,0]});
  S.layers={ins:1,clad:1,jacket:1};
@@ -2375,6 +2378,7 @@ Viewer.prototype.ui=function(){var b=this.root.querySelector('[data-m3="heat"]')
 Viewer.prototype.toggleHeat=function(){var self=this,S=this.cur;this.anims=this.anims.filter(function(a){return !a.o.__heat});
  if(this.state.showing){/* hide */this.state.showing=false;this.state.exploded=false;this.state.power=0;
   S.list.forEach(function(o){if(o.group=='heat'){o.visible=false;if(o.prog!==undefined)o.prog=0}if(o.group=='ins'){self.tw('alpha',0,400,o);self.tw('e',0,10,o)}o.glow=0;S.explode(o,0)});
+  if(this.target[1]!==S.cam.target[1])this.tw('1',S.cam.target[1],600,this.target);
   this._seq=(this._seq||0)+1;this.labStep=0;this.ui();this.temp(null);return}
  this.state.showing=true;this.labStep=0;this.ui();this.user();this.auto=true;
  /* the whole build-up runs at K of its original timing; steps still pending when the system is hidden or the scene is switched are dropped */
@@ -2403,7 +2407,7 @@ Viewer.prototype.power=function(on){var self=this,S=this.cur;this.state.power=on
  this.temp(null)};
 Viewer.prototype.temp=function(v){var el=this.root.querySelector('.m3-temp');if(!el)return;if(v===null){el.classList.remove('on');this._tv=null;return}el.classList.add('on')};
 Viewer.prototype.toggleExplode=function(){if(!this.state.showing)return;this.state.exploded=!this.state.exploded;var e=this.state.exploded?1:0,S=this.cur,self=this;
- S.list.forEach(function(o){if(o.group=='ins'){o.e=o.e||0;self.tw('e',e,1100,o)}});this.ui();this.user();if(e)this.tw('dist',Math.min(this.cur.cam.max,this.cur.cam.dist*(this.cur.cam.exz||1.15)),900)};
+ S.list.forEach(function(o){if(o.group=='ins'){o.e=o.e||0;self.tw('e',e,1100,o)}});this.ui();this.user();if(e)this.tw('dist',Math.min(this.cur.cam.max,this.cur.cam.dist*(this.cur.cam.exz||1.15)),900);var c=this.cur.cam;if(c.exy)this.tw('1',c.target[1]+(e?c.exy:0),900,this.target)};
 /* label layout: each caption takes the first free spot around its point (preferred side first), stays inside the frame,
    never covers another caption or point; a thin leader joins it to its point when it had to move away */
 Viewer.prototype.layoutLabels=function(Ls,W,H){var G=14,M=4,self=this;this._lf=(this._lf||0)+1;
@@ -2514,7 +2518,10 @@ Viewer.prototype.centre=function(P,V){var S=this.cur,VP0=M4.mul(P,V),x0=1e9,x1=-
 var _add=Scene.prototype.add;Scene.prototype.add=function(key,g,mat,opt){var mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];for(var k=0;k<g.p.length;k+=3)for(var j=0;j<3;j++){var v=g.p[k+j];if(v<mn[j])mn[j]=v;if(v>mx[j])mx[j]=v}
  var o=_add.call(this,key,g,mat,opt);o._c=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2];o._bb=[mn,mx];if(!o.center)o.center=o._c;return o};
 
-window.ETS3D={init:function(root,opts){try{var v=new Viewer(root,opts);v.setScene(opts.start||'pipe');root.classList.add('ready');return v}catch(e){root.classList.add('nogl');if(window.console)console.warn('3D:',e);return null}}};
+/* diagnostics: open the page with #gpu to see which graphics card and driver the browser uses for the model */
+function gpuInfo(root,gl){try{var d=gl.getExtension('WEBGL_debug_renderer_info'),t=(d?gl.getParameter(d.UNMASKED_RENDERER_WEBGL)+' · '+gl.getParameter(d.UNMASKED_VENDOR_WEBGL):gl.getParameter(gl.RENDERER))+' · depth '+gl.getParameter(gl.DEPTH_BITS)+' · '+navigator.userAgent.replace(/^.*?\) /,'');
+ var el=document.createElement('div');el.textContent=t;el.style.cssText='position:absolute;left:8px;top:8px;right:8px;z-index:9;font:12px/1.4 Arial,sans-serif;color:#fff;background:rgba(0,0,0,.75);padding:6px 8px;border-radius:6px;user-select:text;pointer-events:auto';(root.querySelector('.m3-vp')||root).appendChild(el)}catch(e){}}
+window.ETS3D={init:function(root,opts){try{var v=new Viewer(root,opts);v.setScene(opts.start||'pipe');root.classList.add('ready');if(/gpu/.test(location.hash))gpuInfo(root,v.R.gl);return v}catch(e){root.classList.add('nogl');if(window.console)console.warn('3D:',e);return null}}};
 })();
 </script>
 <script>(function(){var r=document.getElementById('m3root');if(!r)return;
