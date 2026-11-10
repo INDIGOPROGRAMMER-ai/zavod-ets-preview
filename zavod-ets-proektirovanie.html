@@ -1804,9 +1804,13 @@ function Renderer(canvas){
  var white=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,white);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([255,255,255,255]));
  gl.enable(gl.DEPTH_TEST);gl.clearColor(0,0,0,0);
  function upload(g){var o={};function buf(t,data){var b=gl.createBuffer();gl.bindBuffer(t,b);gl.bufferData(t,data,gl.STATIC_DRAW);return b}
-  o.p=buf(gl.ARRAY_BUFFER,g.p instanceof Float32Array?g.p:new Float32Array(g.p));o.n=buf(gl.ARRAY_BUFFER,g.n instanceof Float32Array?g.n:new Float32Array(g.n));
-  o.u=buf(gl.ARRAY_BUFFER,g.u instanceof Float32Array?g.u:new Float32Array(g.u));
-  var big=(g.p.length/3)>65535;var idx=g.i instanceof Uint16Array||g.i instanceof Uint32Array?g.i:(big?new Uint32Array(g.i):new Uint16Array(g.i));
+  /* every buffer starts with a spare vertex that no triangle uses and holds at least 64 vertices: on some Windows GPUs a tiny
+     buffer (the 4-corner door of the cabinet) had one corner read as the origin and drew a huge triangle across the scene */
+  var nv=g.p.length/3,tot=Math.max(nv+1,64),P=new Float32Array(tot*3),N=new Float32Array(tot*3),UV=new Float32Array(tot*2),k;
+  P.set(g.p,3);N.set(g.n,3);UV.set(g.u,2);for(k=nv+1;k<tot;k++){P[k*3]=g.p[0];P[k*3+1]=g.p[1];P[k*3+2]=g.p[2]}P[0]=g.p[0];P[1]=g.p[1];P[2]=g.p[2];
+  for(k=0;k<tot;k++)if(k==0||k>nv){N[k*3+1]=1;UV[k*2]=2}
+  o.p=buf(gl.ARRAY_BUFFER,P);o.n=buf(gl.ARRAY_BUFFER,N);o.u=buf(gl.ARRAY_BUFFER,UV);
+  var big=tot>65535,idx=big?new Uint32Array(g.i.length):new Uint16Array(g.i.length);for(k=0;k<g.i.length;k++)idx[k]=g.i[k]+1;
   o.i=buf(gl.ELEMENT_ARRAY_BUFFER,idx);o.cnt=idx.length;o.type=idx instanceof Uint32Array?gl.UNSIGNED_INT:gl.UNSIGNED_SHORT;o.len=g.len||1;return o}
  function texture(src,cb){var t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([200,200,200,255]));
   var im=new Image();im.onload=function(){gl.bindTexture(gl.TEXTURE_2D,t);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,im);
@@ -1817,9 +1821,9 @@ function Renderer(canvas){
  function draw(list,VP,cam,time){
   gl.viewport(0,0,canvas.width,canvas.height);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
   gl.uniformMatrix4fv(U.uVP,false,VP);gl.uniform3fv(U.uCam,cam);gl.uniform1f(U.uTime,time);
-  var op=[],tr=[];list.forEach(function(o){if(!o.visible||o.alpha<=0.003)return;(o.alpha<0.999||o.blend?tr:op).push(o)});
+  var op=[],tr=[];list.forEach(function(o){if(!o.visible||o.alpha<=0.003)return;(o.alpha<0.999||(o.blend&&!o.op)?tr:op).push(o)});
   tr.forEach(function(o){o._d=len(sub(o.center||[o.pos[0],o.pos[1],o.pos[2]],cam))});tr.sort(function(a,b){return b._d-a._d});
-  op.sort(function(a,b){return(a.fade?1:0)-(b.fade?1:0)});gl.disable(gl.BLEND);gl.depthMask(true);op.forEach(function(o){if(o.fade){gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);one(o);gl.disable(gl.CULL_FACE)}else one(o)});
+  op.sort(function(a,b){return(a.fade?1:0)-(b.fade?1:0)});gl.disable(gl.BLEND);gl.depthMask(true);op.forEach(function(o){if(o.fade&&!o.op){gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);one(o);gl.disable(gl.CULL_FACE)}else one(o)});
   gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
   tr.forEach(function(o){if(o.twoPass){gl.enable(gl.CULL_FACE);gl.cullFace(gl.FRONT);one(o);gl.cullFace(gl.BACK);one(o);gl.disable(gl.CULL_FACE)}else one(o)});
   gl.depthMask(true);gl.disable(gl.BLEND)}
@@ -1843,7 +1847,7 @@ var MAT={
  box:{color:hex('#DCE2E8'),metal:.15,rough:.35},boxlid:{color:hex('#1B62C4'),metal:.25,rough:.35},gland:{color:hex('#1E242C'),metal:.5,rough:.4},
  cab:{color:hex('#D3D6D2'),metal:.25,rough:.45},screen:{color:[0.02,0.06,0.12],metal:0,rough:.2},plinth:{color:hex('#3E444C'),metal:.3,rough:.55},
  door:{color:[1,1,1],metal:.22,rough:.45},hose:{color:hex('#A9B1B9'),metal:.8,rough:.32},knob:{color:hex('#2A2F36'),metal:.4,rough:.4},chrome:{color:hex('#C8CDD2'),metal:.9,rough:.22},
- insul:{color:hex('#E8D58C'),metal:0,rough:.85},clad:{color:hex('#C4CED8'),metal:.9,rough:.28},jacket:{color:hex('#55606C'),metal:.05,rough:.9},
+ insul:{color:hex('#E4BF58'),metal:0,rough:.95},clad:{color:hex('#A4AFBA'),metal:.75,rough:.3},jacket:{color:hex('#5E6975'),metal:.05,rough:.9},
  pcable:{color:hex('#20262E'),metal:.1,rough:.6},rhose:{color:hex('#16191D'),metal:0,rough:.95},
  ftape:{color:hex('#EFEDE4'),metal:0,rough:.85},
  kbody:{color:hex('#24282E'),metal:.25,rough:.38},kgland:{color:hex('#BFC3C7'),metal:.75,rough:.32},kmetal:{color:hex('#BEBCBA'),metal:.85,rough:.28},ksleeve:{color:hex('#E0DFDB'),metal:.1,rough:.5},sensor:{color:hex('#C9D1D9'),metal:.8,rough:.3},ground:{color:hex('#E9EDF1'),metal:0,rough:1}
@@ -1877,7 +1881,7 @@ function Scene(R){this.R=R;this.list=[];this.labels=[];this.steps=[];this.byKey=
 Scene.prototype.add=function(key,g,mat,opt){opt=opt||{};wind(g);var o={key:key,buf:this.R.upload(g),color:mat.color,metal:mat.metal,rough:mat.rough,emis:mat.emis,alpha:opt.alpha===undefined?1:opt.alpha,
  base:{alpha:opt.alpha===undefined?1:opt.alpha},pos:opt.pos||[0,0,0],rot:opt.rot||[0,0,0],scl:opt.scl||[1,1,1],visible:opt.visible!==false,tex:opt.tex,twoPass:opt.twoPass,blend:opt.blend,
  texA:opt.texA,unlit:opt.unlit,center:opt.center,group:opt.group||'base',prog:opt.prog,anchor:opt.anchor};
- o.fade=opt.fade;o.fit=opt.fit;o.p0=o.pos.slice();this.list.push(o);(this.byKey[key]=this.byKey[key]||[]).push(o);return o};
+ o.fade=opt.fade;o.fit=opt.fit;o.op=opt.group=='ins';o.p0=o.pos.slice();this.list.push(o);(this.byKey[key]=this.byKey[key]||[]).push(o);return o};
 Scene.prototype.ground=function(r,cx,cz,shR){var g=disc(G(),r,0,64);this.add('floor',g,MAT.ground,{tex:this.R.canvasTex(floorCanvas()),texA:true,unlit:true,blend:true,pos:[cx||0,-0.002,cz||0],center:[0,-50,0]});
  var s=disc(G(),shR||r*.55,0.001,48);this.add('shadow',s,{color:[1,1,1],metal:0,rough:1},{tex:this.R.canvasTex(shadowCanvas()),texA:true,unlit:true,blend:true,pos:[cx||0,0,cz||0],scl:[1.6,1,0.7],center:[0,-49,0]})};
 
@@ -2087,30 +2091,34 @@ function buildPipe(R){var S=new Scene(R),Y=1.3,MM=KS,PR=54*MM,TX=-1.0,X0=TX-1450
  function zS(key,r,z0,z1,top,mat){var g=yToZ(cyl(G(),r,z0,z1,40,top?0:Math.PI,top?Math.PI:Math.PI*2));moveG(g,TX,Y,0);S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[TX,Y+(top?.2:-.2),(z0+z1)/2]})}
  [[X(-12790),C2-IO],[C2+IO,C1-IO],[C1+IO,X(6909.5)]].forEach(function(s){var n=Math.max(1,Math.ceil((s[1]-s[0])/3));for(var j=0;j<n;j++){var a=s[0]+(s[1]-s[0])*j/n,b=s[0]+(s[1]-s[0])*(j+1)/n;
   hS('insT',RI,a,b,true,MAT.insul,1);hS('insB',RI,a,b,false,MAT.insul,1);hS('cladT',RK,a,b,true,MAT.clad,1);hS('cladB',RK,a,b,false,MAT.clad,1)}});
+ /* the cladding is made of sheets about 1 m long; a band covers every joint */
+ var bt=G(),bb=G();[[X(-12790),C2-IO],[C2+IO,C1-IO],[C1+IO,X(6909.5)]].forEach(function(s){var n=Math.max(1,Math.round((s[1]-s[0])/(1000*MM)));
+  for(var j=0;j<=n;j++){var x=Math.min(Math.max(s[0]+(s[1]-s[0])*j/n,s[0]+0.03),s[1]-0.03);merge(bt,hArc(Y,RK+0.0035,x-0.02,x+0.02,-Math.PI/2,Math.PI/2,48));merge(bb,hArc(Y,RK+0.0035,x-0.02,x+0.02,Math.PI/2,Math.PI*1.5,48))}});
+ S.add('cladT',bt,MAT.steel,{group:'ins',alpha:0,blend:true,twoPass:true,center:[0,Y+.2,0],fade:FADE,fit:LONG.fit});S.add('cladB',bb,MAT.steel,{group:'ins',alpha:0,blend:true,twoPass:true,center:[0,Y-.2,0],fade:FADE,fit:LONG.fit});
  var zb0=-BJ*MM+IO,zb1=-RI*0.55;zS('insT',RI,zb0,zb1,true,MAT.insul);zS('insB',RI,zb0,zb1,false,MAT.insul);zS('cladT',RK,zb0,zb1,true,MAT.clad);zS('cladB',RK,zb0,zb1,false,MAT.clad);
  /* removable jackets: a drum over each flanged joint, a cap over the blind flange of the branch */
  function jacket(c,ax,cap){var o=G(),a0=cap?-JH:-JH,a1=cap?(1.2+23+20)*MM:JH;
   merge(o,lathe(cap?[[a0/MM,RK/MM+1],[a0/MM,JR/MM],[a1/MM,JR/MM],[a1/MM,0]]:[[a0/MM,RK/MM+1],[a0/MM,JR/MM],[a1/MM,JR/MM],[a1/MM,RK/MM+1]],c,ax,48));
   S.add('jacket',o,MAT.jacket,{group:'ins',alpha:0,blend:true,twoPass:true,center:c})}
  jacket([C1,Y,0],[1,0,0]);jacket([C2,Y,0],[1,0,0]);jacket([TX,Y,-BJ*MM],[0,0,-1],true);
- S.layers={ins:0.42,clad:0.24,jacket:0.5};
+ S.layers={ins:1,clad:1,jacket:1};
  S.explode=function(o,e){if(o.key=='cladT')o.pos=[0,0.85*e,0];else if(o.key=='cladB')o.pos=[0,-0.5*e,0];else if(o.key=='insT')o.pos=[0,0.45*e,0];else if(o.key=='insB')o.pos=[0,-0.28*e,0];else if(o.key=='jacket')o.pos=[0,0.75*e,0]};
  S.labels=[
-  {k:'cable',t:'Нагревательный модуль',p:onPipe(X(-850),TH),n:[0,0,1],step:2,dy:44,side:'l'},
+  {k:'cable',t:'Нагревательный модуль',p:onPipe(X(-850),TH),n:[0,0,1],step:2,dy:44,side:'l',cl:'ins'},
   {k:'pbox',t:'Распределительный модуль ЭТС МК',p:PPL(KP(0,64,45)),n:[0,1,.3],step:2},
   {k:'tbox',t:'Распределительный модуль ЭТС МК',p:TPL(KP(0,64,45)),n:[0,1,.3],step:3,side:'l'},
   {k:'pcable',t:'Силовой кабель',p:[GL[0]-0.3,0.95,HZ],n:[0,0,1],step:1},
   {k:'ccable',t:'Контрольный кабель',p:[TGL[0]-0.3,0.85,HZ2],n:[0,0,1],step:3},
-  {k:'sensor',t:'Датчик температуры',p:[TX,Y+PR+2*SR+0.01,SZ],n:[0,1,.2],step:3,dy:40},
+  {k:'sensor',t:'Датчик температуры',p:[TX,Y+PR+2*SR+0.01,SZ],n:[0,1,.2],step:3,dy:40,cl:'ins'},
   {k:'cab',t:'Шкаф управления ЭТС ШУО',p:[CX,CB.top+0.04,CZ],n:[0,.3,1],step:1,side:'l'},
-  {k:'jacket',t:'Съёмный термочехол на фланцах',p:[C1,Y+JR,0.12],n:[0,1,.5],step:4},
-  {k:'insT',t:'Теплоизоляция',p:[X(1750),Y+RI,0.06],n:[0,1,.5],step:4,ex:true,side:'l'},
-  {k:'cladT',t:'Защитный кожух',p:[X(1950),Y+RK,0.06],n:[0,1,.5],step:4,ex:true}];
+  {k:'jacket',t:'Съёмный термочехол на фланцах',p:[C1,Y+JR,0.12],n:[0,1,.5],step:5,mv:true},
+  {k:'insT',t:'Теплоизоляция',p:[X(1750),Y+RI,0.06],n:[0,1,.5],step:4,mv:true,cl:'clad',side:'l'},
+  {k:'cladT',t:'Защитный кожух',p:[X(1950),Y+RK,0.06],n:[0,1,.5],step:5,mv:true}];
  S.cableLen=cable.buf.len;S.cableDur=2600;S.heatTarget='Трубопровод';return S}
 
 /* --- vertical tank on legs --- */
 function buildTank(R,data,ST){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,DEG=Math.PI/180,k,LEGS=[];
- S.cam={target:[0.9,3.55,0.5],dist:17.6,yaw:-0.5,pitch:0.18,min:8,max:28,fitV:0.79};
+ S.cam={target:[0.9,3.55,0.5],dist:17.6,yaw:-0.5,pitch:0.18,min:8,max:28,fitV:0.79,exz:1};
  S.ground(8,0.8,0,4.6);
  function dec(b,T){var s=atob(b),a=new Uint8Array(s.length);for(var k=0;k<s.length;k++)a[k]=s.charCodeAt(k);return new T(a.buffer)}
  /* the stock outlet stub and its valve are replaced by a proper flanged outlet below */
@@ -2291,6 +2299,7 @@ function buildTank(R,data,ST){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,
  /* insulation + cladding (two halves that slide apart), valve jacket, pipe insulation, insulated pipe support */
  function vshell(key,r,mat,first){[first,-first].forEach(function(sd){var a0=sd>0?-Math.PI/2:Math.PI/2,g=cyl(G(),r,Y0,Y1,40,a0,a0+Math.PI);var o=S.add(key,g,mat,{group:'ins',alpha:0,blend:true,twoPass:true,center:[sd*0.6,4,0]});o.sd=sd})}
  vshell('insT',RS+0.208,MAT.insul,-1);vshell('cladT',RS+0.223,MAT.clad,1);
+ [1,-1].forEach(function(sd){var a0=sd>0?-Math.PI/2:Math.PI/2,g=G();for(var y=Y0+0.95;y<Y1-0.3;y+=1.1)merge(g,cyl(G(),RS+0.2265,y-0.014,y+0.014,40,a0,a0+Math.PI));var o=S.add('cladT',g,MAT.steel,{group:'ins',alpha:0,blend:true,twoPass:true,center:[sd*0.6,4,0]});o.sd=sd});
  var J0=1.12,J1=VXo+0.31,JR=0.3,jk=yToX(cyl(G(),JR,J0,J1,40,0,Math.PI*2));
  [[J0,-1],[J1,1]].forEach(function(e){var b=jk.p.length/3;for(var k=0;k<=40;k++){var a=k/40*Math.PI*2,ca=Math.cos(a),sa=Math.sin(a);pushV(jk,[e[0],ca*(PR+0.075),sa*(PR+0.075)],[e[1],0,0],[k/40,0]);pushV(jk,[e[0],ca*JR,sa*JR],[e[1],0,0],[k/40,1])}
   for(k=0;k<40;k++){var i=b+k*2;jk.i.push(i,i+2,i+1,i+1,i+2,i+3)}});
@@ -2299,21 +2308,21 @@ function buildTank(R,data,ST){var S=new Scene(R),RS=1.027,Y0=0.6,Y1=7.3,OY=0.78,
  var pc2=yToX(cyl(G(),PR+0.085,J1,PX1-0.12,32,0,Math.PI*2));moveG(pc2,0,OY,0);S.add('cladB',pc2,MAT.clad,{group:'ins',alpha:0,blend:true,twoPass:true,center:[3,OY,0]});
  var si=G();box(si,0.3,0.2,0.3,PS,OY-0.2,0);S.add('insB',si,MAT.insul,{group:'ins',alpha:0,blend:true,twoPass:true,center:[PS,OY-0.2,0]});
  var sc=G();box(sc,0.32,0.22,0.32,PS,OY-0.205,0);box(sc,0.14,0.012,0.14,PS,OY-0.318,0);S.add('cladB',sc,MAT.clad,{group:'ins',alpha:0,blend:true,twoPass:true,center:[PS,OY-0.2,0]});
- S.layers={ins:0.42,clad:0.24,jacket:0.5};
- S.explode=function(o,e){if(o.key=='cladT')o.pos=[o.sd*1.7*e,0,0];else if(o.key=='insT')o.pos=[o.sd*0.85*e,0,0];else if(o.key=='cladB')o.pos=[0,0,0.9*e];else if(o.key=='insB')o.pos=[0,0,0.45*e];else if(o.key=='jacket')o.pos=[0,0,0.75*e]};
+ S.layers={ins:1,clad:1,jacket:1};
+ S.explode=function(o,e){if(o.key=='cladT')o.pos=[o.sd*2.7*e,0,0];else if(o.key=='insT')o.pos=[o.sd*1.35*e,0,0];else if(o.key=='cladB')o.pos=[0,0,1.0*e];else if(o.key=='insB')o.pos=[0,0,0.5*e];else if(o.key=='jacket')o.pos=[0,0,0.8*e]};
  var lid=KP(0,0,90);
  S.labels=[
-  {k:'cable',t:'Нагревательный модуль',p:TP(125,yT[5]),n:[Math.cos(125*DEG),0,Math.sin(125*DEG)],step:2,side:'l',dy:40},
+  {k:'cable',t:'Нагревательный модуль',p:TP(125,yT[5]),n:[Math.cos(125*DEG),0,Math.sin(125*DEG)],step:2,side:'l',dy:40,cl:'ins'},
   {k:'pbox',t:'Распределительный модуль ЭТС МК',p:ST?X.PB.p([0,171,45]):PB.p([0,231,0]),n:ST?X.ra:PB.r,step:2},
   {k:'tbox',t:'Распределительный модуль ЭТС МК',p:ST?X.TB.p([0,171,45]):TB.p([0,231,0]),n:ST?X.ra:TB.r,step:3,side:'l'},
   {k:'pcable',t:'Силовой кабель',p:ST?X.SF(X.RFC,50*KS+HR+4*KS,2.6):[GRp[0],GRp[1]*0.5,GRp[2]],n:ST?X.ta:PB.r,step:1},
   {k:'ccable',t:'Контрольный кабель',p:ST?X.SF(X.RFC,-(50*KS+0.033),2.0):[GRt[0],GRt[1]*0.5,GRt[2]],n:ST?X.ra:TB.r,step:3,side:'l'},
-  {k:'sensor',t:'Датчик температуры',p:spp,n:Rd,step:3,side:'l',dy:40},
-  {k:'endseal',t:'Концевая заделка',p:[END+0.04,ycn,zc],n:[0,.5,1],step:3,dy:40},
+  {k:'sensor',t:'Датчик температуры',p:spp,n:Rd,step:3,side:'l',dy:40,cl:'ins'},
+  {k:'endseal',t:'Концевая заделка',p:[END+0.04,ycn,zc],n:[0,.5,1],step:3,dy:40,cl:'ins'},
   {k:'cab',t:'Шкаф управления ЭТС ШУО',p:[CX,CB.top+0.04,CZ],n:[0,.3,1],step:1,dy:-34},
-  {k:'jacket',t:'Термочехол на задвижке',p:[VXo,OY+0.3,0.1],n:[0,.6,.8],step:4},
-  {k:'insT',t:'Теплоизоляция',p:[-0.6,5.4,Math.sqrt(Math.pow(RS+0.208,2)-0.36)],n:[-.5,0,.85],step:4,ex:true,side:'l'},
-  {k:'cladT',t:'Защитный кожух',p:[0.75,6.4,Math.sqrt(Math.pow(RS+0.223,2)-0.5625)],n:[.6,0,.8],step:4,ex:true}];
+  {k:'jacket',t:'Термочехол на задвижке',p:[VXo,OY+0.3,0.1],n:[0,.6,.8],step:5,mv:true},
+  {k:'insT',t:'Теплоизоляция',p:[-0.6,5.4,Math.sqrt(Math.pow(RS+0.208,2)-0.36)],n:[-.5,0,.85],step:4,mv:true,cl:'clad',side:'l'},
+  {k:'cladT',t:'Защитный кожух',p:[0.75,6.4,Math.sqrt(Math.pow(RS+0.223,2)-0.5625)],n:[.6,0,.8],step:5,mv:true}];
  if(ST)S.labels.push({k:'stand',t:'Стойка из швеллера',p:X.SF(X.RWO,0,1.25),n:X.ra,step:2});
  S.cableLen=cable.buf.len;S.cableDur=3800;return S}
 
@@ -2383,14 +2392,17 @@ Viewer.prototype.toggleHeat=function(){var self=this,S=this.cur;this.anims=this.
  /* 3. end seal where the section ends; the control cable comes from the cabinet, then the thermostat and its sensor */
  pop('pfs',5000+D);pop('tpfs',7000+D);pop('endseal',5100+D);pop('ccable',5250+D,900);pop('tbox',6050+D);pop('sensor',6300+D,700);at(6050+D,function(){self.labStep=Math.max(self.labStep,3)});
  /* 4. insulation, cladding, jacket */
- at(7100+D,function(){S.list.forEach(function(o){if(o.group=='ins'){var a=o.key.indexOf('ins')==0?S.layers.ins:o.key=='jacket'?S.layers.jacket:S.layers.clad;self.tw('alpha',a,900*K,o)}});self.labStep=Math.max(self.labStep,4)});
+ function layer(f,a){S.list.forEach(function(o){if(o.group=='ins'&&f(o.key))self.tw('alpha',a,900*K,o)})}
+ at(7100+D,function(){layer(function(k){return k.indexOf('ins')==0},S.layers.ins);self.labStep=Math.max(self.labStep,4)});
+ at(8500+D,function(){layer(function(k){return k.indexOf('clad')==0},S.layers.clad);self.labStep=Math.max(self.labStep,5)});
+ at(9300+D,function(){layer(function(k){return k=='jacket'},S.layers.jacket)});
  /* 5. power on */
- at(8200+D,function(){self.power(true)})};
+ at(10100+D,function(){self.power(true)})};
 Viewer.prototype.power=function(on){var self=this,S=this.cur;this.state.power=on?1:0;S.list.forEach(function(o){if(o.key=='cable'||o.key=='lamp'){self.tw('glow',on?1:0,1200,o)}});
  this.temp(null)};
 Viewer.prototype.temp=function(v){var el=this.root.querySelector('.m3-temp');if(!el)return;if(v===null){el.classList.remove('on');this._tv=null;return}el.classList.add('on')};
 Viewer.prototype.toggleExplode=function(){if(!this.state.showing)return;this.state.exploded=!this.state.exploded;var e=this.state.exploded?1:0,S=this.cur,self=this;
- S.list.forEach(function(o){if(o.group=='ins'){o.e=o.e||0;self.tw('e',e,1100,o)}});this.ui();this.user();if(e)this.tw('dist',Math.min(this.cur.cam.max,this.cur.cam.dist*1.15),900)};
+ S.list.forEach(function(o){if(o.group=='ins'){o.e=o.e||0;self.tw('e',e,1100,o)}});this.ui();this.user();if(e)this.tw('dist',Math.min(this.cur.cam.max,this.cur.cam.dist*(this.cur.cam.exz||1.15)),900)};
 /* label layout: each caption takes the first free spot around its point (preferred side first), stays inside the frame,
    never covers another caption or point; a thin leader joins it to its point when it had to move away */
 Viewer.prototype.layoutLabels=function(Ls,W,H){var G=14,M=4,self=this;this._lf=(this._lf||0)+1;
@@ -2413,6 +2425,8 @@ Viewer.prototype.layoutLabels=function(Ls,W,H){var G=14,M=4,self=this;this._lf=(
   function rect(i){var cx=Math.min(Math.max(C[i][0],M),W-w-M),cy=Math.min(Math.max(C[i][1],M),H-h-M);return[cx,cy,cx+w,cy+h]}
   var best=null,bi=ord[0];for(k=0;k<ord.length;k++){var r=rect(ord[k]);if(!hit(r,l)){best=r;bi=ord[k];break}}
   if(!best){var bd2=1e18;for(var gy=M;gy<=H-h-M;gy+=4)for(var gx=M;gx<=W-w-M;gx+=6){var r=[gx,gy,gx+w,gy+h];if(hit(r,l))continue;var ex=Math.max(r[0]-x,0,x-r[2]),ey=Math.max(r[1]-y,0,y-r[3]),dd=ex*ex+ey*ey;if(dd<bd2){bd2=dd;best=r}}if(best)bi=0}
+  /* phones: a caption with no free spot left is not shown at all rather than drawn over another one */
+  if(!best&&sm){l.el.classList.remove('on');l.ln.style.display='none';return}
   if(!best){var ba=1e18;for(k=0;k<C.length;k++){var r=rect(k),ar=0;placed.forEach(function(q){var ox=Math.min(r[2],q[2])-Math.max(r[0],q[0]),oy=Math.min(r[3],q[3])-Math.max(r[1],q[1]);if(ox>0&&oy>0)ar+=ox*oy});if(ar<ba){ba=ar;best=r;bi=k}}}
   l.ci=bi;placed.push(best);
   sp.style.left=(best[0]-x).toFixed(1)+'px';sp.style.top=(best[1]-y).toFixed(1)+'px';sp.style.right='auto';
@@ -2440,7 +2454,8 @@ Viewer.prototype.loop=function(now){requestAnimationFrame(this.loop);
  this.R.draw(S.list,VP,eye,(now-this.t0)/1000);this.chrome(V);
  /* labels */
  var W=this.cv.clientWidth,H=this.cv.clientHeight,camDir=nrm(sub(eye,this.target)),st=this.labStep||0,ex=this.state.exploded;
- S.labels.forEach(function(l){var show=self.state.showing&&st>=l.step&&(!l.ex||ex);var p=l.p;if(l.ex){var off=[0,0,0];S.list.some(function(o){if(o.key==l.k){off=o.pos;return true}});p=add(p,off)}
+ var cI=0,cC=0;S.list.some(function(o){if(o.key=='insT'){cI=o.alpha>0.5&&(o.e||0)<0.5;return true}});S.list.some(function(o){if(o.key=='cladT'){cC=o.alpha>0.5&&(o.e||0)<0.5;return true}});
+ S.labels.forEach(function(l){var show=self.state.showing&&st>=l.step&&(!l.ex||ex)&&!(l.cl=='ins'&&cI)&&!(l.cl=='clad'&&cC);var p=l.p;if(l.ex||l.mv){var off=[0,0,0];S.list.some(function(o){if(o.key==l.k){off=o.pos;return true}});p=add(p,off)}
   var v=[VP[0]*p[0]+VP[4]*p[1]+VP[8]*p[2]+VP[12],VP[1]*p[0]+VP[5]*p[1]+VP[9]*p[2]+VP[13],VP[3]*p[0]+VP[7]*p[1]+VP[11]*p[2]+VP[15]];
   var face=dot(nrm(l.n),nrm(sub(eye,p)))>-0.15;if(v[2]<=0)show=false;
   var x=(v[0]/v[2]*0.5+0.5)*W,y=(1-(v[1]/v[2]*0.5+0.5))*H;l.sx=x;l.sy=y;l.vis=show&&face&&x>0&&x<W&&y>0&&y<H;l.el.style.transform='translate('+x.toFixed(1)+'px,'+y.toFixed(1)+'px)';l.el.classList.toggle('on',l.vis)});
