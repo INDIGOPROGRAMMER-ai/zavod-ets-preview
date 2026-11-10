@@ -1805,9 +1805,10 @@ function Renderer(canvas){
  var white=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,white);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([255,255,255,255]));
  gl.enable(gl.DEPTH_TEST);gl.clearColor(0,0,0,0);
  function upload(g){var o={};function buf(t,data){var b=gl.createBuffer();gl.bindBuffer(t,b);gl.bufferData(t,data,gl.STATIC_DRAW);return b}
-  /* every buffer starts with a spare vertex that no triangle uses and holds at least 64 vertices: on some Windows GPUs a tiny
-     buffer (the 4-corner door of the cabinet) had one corner read as the origin and drew a huge triangle across the scene */
-  var nv=g.p.length/3,tot=Math.max(nv+1,64),P=new Float32Array(tot*3),N=new Float32Array(tot*3),UV=new Float32Array(tot*2),k;
+  /* every buffer starts with a spare vertex and ends with 8 spare ones that no triangle uses: on some Windows GPUs the last
+     vertex of a buffer is read as the origin (the fetch runs past the end of the data), which drew huge triangles and flaps
+     from the cabinet door, the hinges and the insulation across the scene */
+  var nv=g.p.length/3,tot=Math.max(nv+9,64),P=new Float32Array(tot*3),N=new Float32Array(tot*3),UV=new Float32Array(tot*2),k;
   P.set(g.p,3);N.set(g.n,3);UV.set(g.u,2);for(k=nv+1;k<tot;k++){P[k*3]=g.p[0];P[k*3+1]=g.p[1];P[k*3+2]=g.p[2]}P[0]=g.p[0];P[1]=g.p[1];P[2]=g.p[2];
   for(k=0;k<tot;k++)if(k==0||k>nv){N[k*3+1]=1;UV[k*2]=2}
   o.p=buf(gl.ARRAY_BUFFER,P);o.n=buf(gl.ARRAY_BUFFER,N);o.u=buf(gl.ARRAY_BUFFER,UV);
